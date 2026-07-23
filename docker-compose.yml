@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ventureflow_db
+    environment:
+      POSTGRES_USER: ventureflow
+      POSTGRES_PASSWORD: ventureflow_password
+      POSTGRES_DB: ventureflow_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ventureflow -d ventureflow_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ventureflow_app
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: "postgresql://ventureflow:ventureflow_password@postgres:5432/ventureflow_db?schema=public"
+      JWT_SECRET: "ventureflow_super_secret_jwt_key_2026_prod"
+      REFRESH_SECRET: "ventureflow_super_secret_refresh_key_2026_prod"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
