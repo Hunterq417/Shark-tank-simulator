@@ -1,7 +1,9 @@
-import { useState, KeyboardEvent } from 'react';
+import { useState, useEffect, KeyboardEvent } from 'react';
 import { motion } from 'motion/react';
 import { ViewState } from '../types';
 import { ArrowLeft, MessageSquare, Send, Paperclip, Smile, CheckCircle2 } from 'lucide-react';
+import { negotiationsApi, offersApi } from '../lib/api';
+import { getSocket } from '../lib/socket';
 
 interface NegotiationProps {
   onNavigate: (view: ViewState) => void;
@@ -16,56 +18,103 @@ interface ChatMessage {
   time: string;
 }
 
+const ROOM_CODE = 'ROOM-101';
+
+function toSenderDisplay(role: string): ChatMessage['sender'] {
+  if (role === 'Founder' || role === 'FOUNDER') return 'Founder';
+  if (role === 'System' || role === 'SYSTEM') return 'System';
+  return 'Investor';
+}
+
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
 export function Negotiation({ onNavigate, onOpenCounterOffer }: NegotiationProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: '1', sender: 'Investor', name: 'Apex Ventures', text: "We're interested, but the valuation is a bit high. Can you do $4.5M for 12%?", time: '10:42 AM' },
-    { id: '2', sender: 'Founder', name: 'You', text: "We're confident in our projections. How about $4.8M for 11%?", time: '10:44 AM' },
-    { id: '3', sender: 'Investor', name: 'Apex Ventures', text: "Let me discuss with my partners.", time: '10:45 AM' },
-    { id: '4', sender: 'System', name: 'System', text: "New Offer Received from Apex Ventures: $4.5M for 12% Equity", time: '10:46 AM' },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [negotiationId, setNegotiationId] = useState<string | null>(null);
+  const [startup, setStartup] = useState<{ name: string; fundingAsk: string; equityOffered: string; valuation: string; description: string } | null>(null);
+  const [offer, setOffer] = useState<{ id: string; sharkName: string; amount: string; equity: string; valuation?: string | null; status: string } | null>(null);
 
   const [inputMsg, setInputMsg] = useState('');
-  const [activeOfferStatus, setActiveOfferStatus] = useState<'Active' | 'Accepted' | 'Rejected'>('Active');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const activeOfferStatus: 'Active' | 'Accepted' | 'Rejected' =
+    offer?.status === 'ACCEPTED' ? 'Accepted' : offer?.status === 'REJECTED' ? 'Rejected' : 'Active';
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleSendMessage = () => {
-    if (!inputMsg.trim()) return;
-
-    const newMsg: ChatMessage = {
-      id: Date.now().toString(),
-      sender: 'Founder',
-      name: 'You',
-      text: inputMsg.trim(),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-
-    setMessages(prev => [...prev, newMsg]);
-    setInputMsg('');
-
-    // Simulated reply after 1.5 seconds
-    setTimeout(() => {
-      const replies = [
-        "Sounds good! We can proceed with drafting the definitive agreements.",
-        "Understood. Let us review that clause with our legal counsel.",
-        "That works for us. Sending the revised term sheet over now!"
-      ];
-      const randomReply = replies[Math.floor(Math.random() * replies.length)];
-      setMessages(prev => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          sender: 'Investor',
-          name: 'Apex Ventures',
-          text: randomReply,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const loadRoom = () => {
+    negotiationsApi.getRoom(ROOM_CODE)
+      .then((room) => {
+        setNegotiationId(room.id);
+        if (room.startup) {
+          setStartup({
+            name: room.startup.name,
+            fundingAsk: room.startup.fundingAsk,
+            equityOffered: room.startup.equityOffered,
+            valuation: room.startup.valuation,
+            description: room.startup.description,
+          });
         }
-      ]);
-    }, 1500);
+        if (room.offer) {
+          setOffer({
+            id: room.offer.id,
+            sharkName: room.offer.sharkName,
+            amount: room.offer.amount,
+            equity: room.offer.equity,
+            valuation: room.offer.valuation,
+            status: room.offer.status,
+          });
+        }
+        if (Array.isArray(room.chatMessages)) {
+          setMessages(room.chatMessages.map((m: any) => ({
+            id: m.id,
+            sender: toSenderDisplay(m.senderRole),
+            name: m.senderName,
+            text: m.text,
+            time: formatTime(m.createdAt),
+          })));
+        }
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadRoom();
+
+    const socket = getSocket();
+    socket.emit('join_room', ROOM_CODE);
+
+    const onChatMessage = (m: any) => {
+      setMessages(prev => prev.some(existing => existing.id === m.id) ? prev : [...prev, {
+        id: m.id,
+        sender: toSenderDisplay(m.senderRole),
+        name: m.senderName,
+        text: m.text,
+        time: formatTime(m.createdAt),
+      }]);
+    };
+    const onOfferUpdated = () => loadRoom();
+
+    socket.on('chat_message', onChatMessage);
+    socket.on('offer_updated', onOfferUpdated);
+
+    return () => {
+      socket.emit('leave_room', ROOM_CODE);
+      socket.off('chat_message', onChatMessage);
+      socket.off('offer_updated', onOfferUpdated);
+    };
+  }, []);
+
+  const handleSendMessage = () => {
+    if (!inputMsg.trim() || !negotiationId) return;
+
+    negotiationsApi.sendMessage(negotiationId, { text: inputMsg.trim() }).catch(() => {});
+    setInputMsg('');
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -74,34 +123,26 @@ export function Negotiation({ onNavigate, onOpenCounterOffer }: NegotiationProps
     }
   };
 
-  const handleAccept = () => {
-    setActiveOfferStatus('Accepted');
-    triggerToast('Offer Accepted! Generated binding Term Sheet document.');
-    setMessages(prev => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        sender: 'System',
-        name: 'System',
-        text: 'Offer of $4.5M for 12% Equity ACCEPTED by Founder. Deal Room locked.',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }
-    ]);
+  const handleAccept = async () => {
+    if (!offer) return;
+    try {
+      await offersApi.accept(offer.id);
+      triggerToast('Offer Accepted! Generated binding Term Sheet document.');
+      loadRoom();
+    } catch {
+      triggerToast('Could not accept the offer.');
+    }
   };
 
-  const handleReject = () => {
-    setActiveOfferStatus('Rejected');
-    triggerToast('Offer Rejected.');
-    setMessages(prev => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        sender: 'System',
-        name: 'System',
-        text: 'Offer of $4.5M for 12% Equity REJECTED by Founder.',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }
-    ]);
+  const handleReject = async () => {
+    if (!offer) return;
+    try {
+      await offersApi.reject(offer.id);
+      triggerToast('Offer Rejected.');
+      loadRoom();
+    } catch {
+      triggerToast('Could not reject the offer.');
+    }
   };
 
   return (
@@ -159,32 +200,34 @@ export function Negotiation({ onNavigate, onOpenCounterOffer }: NegotiationProps
                <div className="p-6">
                   <div className="flex items-center gap-4 mb-6 pb-6 border-b border-outline-variant">
                      <div className="w-12 h-12 rounded-lg bg-surface-variant border border-outline-variant flex items-center justify-center p-2 font-display font-bold text-primary text-2xl">
-                        Q
+                        {(startup?.name || 'Q').charAt(0)}
                      </div>
-                     <h3 className="font-headline-md text-xl text-on-surface font-bold">Quantum Dynamics AI</h3>
+                     <h3 className="font-headline-md text-xl text-on-surface font-bold">{startup?.name || 'Quantum Dynamics AI'}</h3>
                   </div>
 
                   <div className="space-y-4 font-label-mono text-sm mb-6 pb-6 border-b border-outline-variant">
                      <div className="flex justify-between">
                         <span className="text-on-surface-variant">Target Capital:</span>
-                        <span className="text-on-surface font-bold">$5.0M</span>
+                        <span className="text-on-surface font-bold">{startup?.fundingAsk || '$5.0M'}</span>
                      </div>
                      <div className="flex justify-between">
                         <span className="text-on-surface-variant">Equity Offered:</span>
-                        <span className="text-on-surface font-bold">10.0%</span>
+                        <span className="text-on-surface font-bold">{startup?.equityOffered || '10.0%'}</span>
                      </div>
                      <div className="flex justify-between">
                         <span className="text-on-surface-variant">Pre-Money Valuation:</span>
-                        <span className="text-on-surface font-bold">$45.0M</span>
+                        <span className="text-on-surface font-bold">{startup?.valuation || '$45.0M'}</span>
                      </div>
                   </div>
 
                   <div>
                      <h4 className="text-on-surface-variant text-xs font-label-mono uppercase mb-3">Pitch Summary</h4>
                      <ul className="text-on-surface text-xs space-y-2 pl-4 list-disc list-outside marker:text-primary">
-                        <li>Enterprise Machine Learning Solutions</li>
-                        <li>Looking to scale sales & marketing</li>
-                        <li>B2B SaaS model, $2M ARR</li>
+                        {(startup?.description || 'Enterprise Machine Learning Solutions. Looking to scale sales & marketing. B2B SaaS model.')
+                          .split('.')
+                          .map(s => s.trim())
+                          .filter(Boolean)
+                          .map((sentence, i) => <li key={i}>{sentence}</li>)}
                      </ul>
                   </div>
                </div>
@@ -199,11 +242,11 @@ export function Negotiation({ onNavigate, onOpenCounterOffer }: NegotiationProps
              <div className="glass-panel border-secondary/30 rounded-2xl p-6 shadow-[0_0_40px_rgba(16,185,129,0.08)] relative overflow-hidden">
                 <div className="flex justify-between items-start relative z-10 mb-6">
                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-surface-variant flex items-center justify-center font-display font-bold text-xl text-secondary border border-outline-variant">A</div>
+                      <div className="w-12 h-12 rounded-xl bg-surface-variant flex items-center justify-center font-display font-bold text-xl text-secondary border border-outline-variant">{(offer?.sharkName || 'A').charAt(0)}</div>
                       <div>
-                         <h3 className="text-on-surface-variant text-xs font-label-mono uppercase">Lead Investor: Apex Ventures</h3>
-                         <div className="font-display text-3xl font-bold text-on-surface my-1">$4.5M <span className="text-2xl font-normal text-on-surface-variant">for</span> 12.0% Equity</div>
-                         <p className="font-label-mono text-xs text-secondary font-bold">Implied Valuation: $37.5M</p>
+                         <h3 className="text-on-surface-variant text-xs font-label-mono uppercase">Lead Investor: {offer?.sharkName || 'Apex Ventures'}</h3>
+                         <div className="font-display text-3xl font-bold text-on-surface my-1">{offer?.amount || '$4.5M'} <span className="text-2xl font-normal text-on-surface-variant">for</span> {offer?.equity || '12.0%'} Equity</div>
+                         <p className="font-label-mono text-xs text-secondary font-bold">Implied Valuation: {offer?.valuation || '$37.5M'}</p>
                       </div>
                    </div>
                    <span className={`font-label-mono text-xs uppercase tracking-wider border px-3 py-1 rounded-full font-bold ${

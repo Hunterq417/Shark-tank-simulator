@@ -4,9 +4,10 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding VentureFlow Database...');
+  console.log('Seeding Sharktank Simulator Database...');
 
   // Clean existing data
+  await prisma.pitchQueueEntry.deleteMany();
   await prisma.chatMessage.deleteMany();
   await prisma.negotiation.deleteMany();
   await prisma.counterOffer.deleteMany();
@@ -31,7 +32,7 @@ async function main() {
       passwordHash,
       name: 'System Admin',
       role: 'ADMIN',
-      company: 'VentureFlow Global',
+      company: 'Sharktank Simulator Global',
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&auto=format&fit=crop',
       balance: '$100,000,000',
       dealsClosed: 42
@@ -43,7 +44,7 @@ async function main() {
     {
       name: 'Alexander Wright',
       email: 'a.wright@apexventures.io',
-      role: 'SHARK',
+      role: 'SHARK' as const,
       company: 'Apex Syndicate',
       avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=256&auto=format&fit=crop',
       balance: '$12,500,000',
@@ -55,7 +56,7 @@ async function main() {
     {
       name: 'Sarah Jenkins',
       email: 'sarah@jenkinsangels.com',
-      role: 'SHARK',
+      role: 'SHARK' as const,
       company: 'Jenkins Capital',
       avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=688&auto=format&fit=crop',
       balance: '$18,000,000',
@@ -67,7 +68,7 @@ async function main() {
     {
       name: 'Marcus Vance',
       email: 'm.vance@silverlakefund.com',
-      role: 'SHARK',
+      role: 'SHARK' as const,
       company: 'Silver Lake Partners',
       avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=256&auto=format&fit=crop',
       balance: '$45,000,000',
@@ -79,7 +80,7 @@ async function main() {
     {
       name: 'Elena Rostova',
       email: 'elena@sequoiaglobal.com',
-      role: 'SHARK',
+      role: 'SHARK' as const,
       company: 'Sequoia Growth',
       avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=256&auto=format&fit=crop',
       balance: '$60,000,000',
@@ -315,6 +316,14 @@ async function main() {
     }
   });
 
+  await prisma.pitchQueueEntry.createMany({
+    data: [
+      { eventId: liveEvent.id, startupId: nexusStartup.id, position: 0, status: 'ACTIVE' },
+      { eventId: liveEvent.id, startupId: quantumStartup.id, position: 1, status: 'WAITING' },
+      { eventId: liveEvent.id, startupId: createdStartups[2].id, position: 2, status: 'WAITING' }
+    ]
+  });
+
   // 5. Create Offers & Negotiations
   const offer1 = await prisma.offer.create({
     data: {
@@ -370,25 +379,25 @@ async function main() {
     data: [
       {
         negotiationId: negotiation.id,
-        senderRole: 'Investor',
+        senderRole: 'SHARK' as const,
         senderName: 'Apex Ventures',
         text: "We're interested, but the valuation is a bit high. Can you do $4.5M for 12%?"
       },
       {
         negotiationId: negotiation.id,
-        senderRole: 'Founder',
+        senderRole: 'FOUNDER' as const,
         senderName: 'Dr. Sophia Ray',
         text: "We're confident in our projections. How about $4.8M for 11%?"
       },
       {
         negotiationId: negotiation.id,
-        senderRole: 'Investor',
+        senderRole: 'SHARK' as const,
         senderName: 'Apex Ventures',
         text: "Let me discuss with my partners."
       },
       {
         negotiationId: negotiation.id,
-        senderRole: 'System',
+        senderRole: 'SYSTEM' as const,
         senderName: 'System',
         text: "New Offer Received from Apex Ventures: $4.5M for 12% Equity"
       }
@@ -403,21 +412,21 @@ async function main() {
         leadInvestor: 'Apex Ventures',
         dealSize: '$2.5M',
         valuation: '$25.0M',
-        status: 'Closed'
+        status: 'CLOSED' as const
       },
       {
         startupId: quantumStartup.id,
         leadInvestor: 'Silver Lake',
         dealSize: '$4.5M',
         valuation: '$37.5M',
-        status: 'In Term Sheet'
+        status: 'IN_TERM_SHEET' as const
       },
       {
         startupId: createdStartups[2].id,
         leadInvestor: 'Sequoia Growth',
         dealSize: '$1.8M',
         valuation: '$18.0M',
-        status: 'Closed'
+        status: 'CLOSED' as const
       }
     ]
   });
@@ -429,24 +438,24 @@ async function main() {
         title: 'New Term Sheet Offer',
         message: 'Apex Ventures submitted $2.5M offer for Quantum Dynamics AI.',
         read: false,
-        type: 'offer'
+        type: 'OFFER' as const
       },
       {
         title: 'Live Pitch Starting',
         message: 'Nexus AI is entering the live stage now.',
         read: false,
-        type: 'event'
+        type: 'EVENT' as const
       },
       {
         title: 'Escrow Verification',
         message: 'Proof of funds confirmed for $12.5M capital line.',
         read: true,
-        type: 'system'
+        type: 'SYSTEM' as const
       }
     ]
   });
 
-  console.log('✅ VentureFlow Database Seeded Successfully!');
+  console.log('✅ Sharktank Simulator Database Seeded Successfully!');
 }
 
 main()

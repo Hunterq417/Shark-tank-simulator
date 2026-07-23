@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { ViewState } from '../types';
+import { dealsApi } from '../lib/api';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -65,19 +66,73 @@ interface AnalyticsProps {
   onNavigate?: (view: ViewState) => void;
 }
 
+interface MetricsState {
+  totalCapitalDeployed: string;
+  avgValuation: string;
+  completedEvents: number;
+  acceptanceRate: string;
+}
+
+interface DealRow {
+  id: string;
+  company: string;
+  stage: string;
+  sector: string;
+  dealSize: string;
+  valuation: string;
+  lead: string;
+  status: string;
+}
+
 export function Analytics({ onNavigate }: AnalyticsProps) {
   const [timeframe, setTimeframe] = useState<'1W' | '1M' | '1Q' | '1Y' | 'ALL'>('1M');
   const [sectorFilter, setSectorFilter] = useState('All');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [metrics, setMetrics] = useState<MetricsState>({
+    totalCapitalDeployed: '$48.2M',
+    avgValuation: '$22.5M',
+    completedEvents: 38,
+    acceptanceRate: '68.4%',
+  });
+  const [deals, setDeals] = useState<DealRow[]>(recentDeals);
+
+  useEffect(() => {
+    dealsApi.getAnalytics()
+      .then((data) => {
+        setMetrics({
+          totalCapitalDeployed: data.totalCapitalDeployed,
+          avgValuation: data.avgValuation,
+          completedEvents: data.completedEvents,
+          acceptanceRate: data.acceptanceRate,
+        });
+      })
+      .catch(() => {});
+
+    dealsApi.getAll()
+      .then((data) => {
+        if (!Array.isArray(data) || data.length === 0) return;
+        setDeals(data.map((d: any) => ({
+          id: d.id,
+          company: d.startup?.name || d.leadInvestor,
+          stage: d.startup?.stage || '—',
+          sector: d.startup?.sector || '—',
+          dealSize: d.dealSize,
+          valuation: d.valuation,
+          lead: d.leadInvestor,
+          status: d.status === 'IN_TERM_SHEET' ? 'In Term Sheet' : 'Closed',
+        })));
+      })
+      .catch(() => {});
+  }, []);
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const filteredDeals = sectorFilter === 'All' 
-    ? recentDeals 
-    : recentDeals.filter(d => d.sector === sectorFilter);
+  const filteredDeals = sectorFilter === 'All'
+    ? deals
+    : deals.filter(d => d.sector === sectorFilter);
 
   return (
     <div className="flex-1 overflow-y-auto bg-background p-8 relative">
@@ -147,7 +202,7 @@ export function Analytics({ onNavigate }: AnalyticsProps) {
                 <DollarSign className="w-4 h-4" />
               </div>
             </div>
-            <div className="font-display text-3xl font-bold text-on-surface mb-2">$48.2M</div>
+            <div className="font-display text-3xl font-bold text-on-surface mb-2">{metrics.totalCapitalDeployed}</div>
             <div className="flex items-center gap-1 text-secondary text-xs font-label-mono">
               <TrendingUp className="w-4 h-4" />
               <span>+18.4% vs last quarter</span>
@@ -161,7 +216,7 @@ export function Analytics({ onNavigate }: AnalyticsProps) {
                 <BarChart3 className="w-4 h-4" />
               </div>
             </div>
-            <div className="font-display text-3xl font-bold text-on-surface mb-2">$22.5M</div>
+            <div className="font-display text-3xl font-bold text-on-surface mb-2">{metrics.avgValuation}</div>
             <div className="flex items-center gap-1 text-secondary text-xs font-label-mono">
               <TrendingUp className="w-4 h-4" />
               <span>+6.2% QoQ growth</span>
@@ -175,9 +230,9 @@ export function Analytics({ onNavigate }: AnalyticsProps) {
                 <Zap className="w-4 h-4" />
               </div>
             </div>
-            <div className="font-display text-3xl font-bold text-on-surface mb-2">38</div>
+            <div className="font-display text-3xl font-bold text-on-surface mb-2">{metrics.completedEvents}</div>
             <div className="flex items-center gap-1 text-on-surface-variant text-xs font-label-mono">
-              <span>64 Active Bids placed</span>
+              <span>{deals.length} Deals recorded</span>
             </div>
           </div>
 
@@ -188,7 +243,7 @@ export function Analytics({ onNavigate }: AnalyticsProps) {
                 <Layers className="w-4 h-4" />
               </div>
             </div>
-            <div className="font-display text-3xl font-bold text-on-surface mb-2">68.4%</div>
+            <div className="font-display text-3xl font-bold text-on-surface mb-2">{metrics.acceptanceRate}</div>
             <div className="flex items-center gap-1 text-secondary text-xs font-label-mono">
               <span>12.5 hrs avg response time</span>
             </div>
@@ -289,7 +344,7 @@ export function Analytics({ onNavigate }: AnalyticsProps) {
           <div className="flex justify-between items-center mb-6">
             <div>
               <h3 className="font-headline-md text-lg text-on-surface font-bold">Capital Deployed by Sector</h3>
-              <p className="text-xs text-on-surface-variant">Top performing technology domains on VentureFlow</p>
+              <p className="text-xs text-on-surface-variant">Top performing technology domains on Sharktank Simulator</p>
             </div>
           </div>
 

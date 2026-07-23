@@ -288,7 +288,7 @@ export function SignOutModal({ isOpen, onClose, onConfirm }: { isOpen: boolean; 
       >
         <LogOut className="w-12 h-12 text-error mx-auto" />
         <div>
-          <h3 className="font-headline-md text-xl text-on-surface font-bold">Sign Out of VentureFlow</h3>
+          <h3 className="font-headline-md text-xl text-on-surface font-bold">Sign Out of Sharktank Simulator</h3>
           <p className="text-xs text-on-surface-variant mt-2">Are you sure you want to exit your active institutional session?</p>
         </div>
 

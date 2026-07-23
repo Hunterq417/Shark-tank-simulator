@@ -6,7 +6,10 @@ export function getSocket(): Socket {
   if (!socket) {
     socket = io(window.location.origin, {
       transports: ['websocket', 'polling'],
-      autoConnect: true
+      autoConnect: true,
+      auth: {
+        token: localStorage.getItem('access_token') || undefined
+      }
     });
 
     socket.on('connect', () => {

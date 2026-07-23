@@ -23,7 +23,7 @@ export function Sidebar({ currentView, onNavigate, onOpenNewBid, onOpenSupport, 
   return (
     <nav className="hidden md:flex flex-col h-full py-6 px-4 bg-surface-container-low border-r border-outline-variant z-40 w-64 shrink-0">
       <div className="mb-8 px-4 cursor-pointer" onClick={() => onNavigate('dashboard')}>
-        <h1 className="font-headline-md text-xl font-bold text-on-surface">VentureFlow</h1>
+        <h1 className="font-headline-md text-xl font-bold text-on-surface">Sharktank Simulator</h1>
         <p className="font-label-mono text-xs text-on-surface-variant uppercase tracking-wider mt-1">Institutional Grade</p>
       </div>
       

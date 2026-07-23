@@ -233,7 +233,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode = 'login
             <ShieldCheck className="w-6 h-6" />
           </div>
           <h3 className="text-xl font-bold font-headline-md">
-            {mode === 'login' && 'Sign In to VentureFlow'}
+            {mode === 'login' && 'Sign In to Sharktank Simulator'}
             {mode === 'register' && 'Create Investor Account'}
             {mode === 'forgot' && 'Reset Your Password'}
             {mode === 'reset' && 'Set New Password'}

@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { ViewState, UserProfile, NotificationItem } from '../types';
 import { Radio, Briefcase, BarChart3, TrendingUp, Sparkles, ArrowRight, PlayCircle, Shield, Zap } from 'lucide-react';
+import { eventsApi, offersApi, dealsApi } from '../lib/api';
 
 interface DashboardProps {
   onNavigate: (view: ViewState) => void;
@@ -13,12 +15,64 @@ interface DashboardProps {
   onOpenViewDeck: (company: string) => void;
 }
 
-export function Dashboard({ 
-  onNavigate, 
+export function Dashboard({
+  onNavigate,
   user,
   onOpenNewBid,
   onOpenViewDeck
 }: DashboardProps) {
+  const [liveStartup, setLiveStartup] = useState<{
+    name: string; sector: string; stage: string; fundingAsk: string; equityOffered: string; description: string;
+  } | null>(null);
+  const [pendingCount, setPendingCount] = useState(3);
+  const [topOffer, setTopOffer] = useState<{ startupName: string; sharkName: string; amount: string } | null>(null);
+  const [capitalDeployed, setCapitalDeployed] = useState('$48.2M');
+
+  useEffect(() => {
+    eventsApi.getLiveEvent()
+      .then((event) => {
+        const startup = event?.startup;
+        if (startup) {
+          setLiveStartup({
+            name: startup.name,
+            sector: startup.sector,
+            stage: startup.stage,
+            fundingAsk: startup.fundingAsk,
+            equityOffered: startup.equityOffered,
+            description: startup.description,
+          });
+        }
+      })
+      .catch(() => {});
+
+    offersApi.getAll()
+      .then((offers) => {
+        if (!Array.isArray(offers) || offers.length === 0) return;
+        const pending = offers.filter((o: any) => o.status === 'PENDING' || o.status === 'COUNTERED');
+        setPendingCount(pending.length);
+        const leading = pending[0] || offers[0];
+        if (leading) {
+          setTopOffer({
+            startupName: leading.startup?.name || 'the current pitch',
+            sharkName: leading.sharkName,
+            amount: leading.amount,
+          });
+        }
+      })
+      .catch(() => {});
+
+    dealsApi.getAnalytics()
+      .then((data) => {
+        if (data?.totalCapitalDeployed) setCapitalDeployed(data.totalCapitalDeployed);
+      })
+      .catch(() => {});
+  }, []);
+
+  const stageName = liveStartup ? `${liveStartup.name} Stage` : 'Nexus AI Stage';
+  const stageSummary = liveStartup
+    ? `${liveStartup.description ? liveStartup.description.split('.')[0] : 'Live pitch'} asking ${liveStartup.fundingAsk} for ${liveStartup.equityOffered}`
+    : 'Autonomous ML systems asking $1.5M for 10%';
+
   return (
     <div className="flex-1 overflow-y-auto relative bg-background">
       {/* Background Graphic */}
@@ -105,8 +159,8 @@ export function Dashboard({
                 Live Now
               </span>
             </div>
-            <h3 className="font-headline-md text-xl text-on-surface font-bold group-hover:text-primary transition-colors">Nexus AI Stage</h3>
-            <p className="text-xs text-on-surface-variant mt-1 mb-4">Autonomous ML systems asking $1.5M for 10%</p>
+            <h3 className="font-headline-md text-xl text-on-surface font-bold group-hover:text-primary transition-colors">{stageName}</h3>
+            <p className="text-xs text-on-surface-variant mt-1 mb-4">{stageSummary}</p>
             <div className="flex items-center text-xs font-label-mono text-primary font-bold">
               Join Stage <ArrowRight className="w-3.5 h-3.5 ml-1 group-hover:translate-x-1 transition-transform" />
             </div>
@@ -119,11 +173,13 @@ export function Dashboard({
             <div className="flex justify-between items-start mb-4">
               <span className="text-xs font-label-mono text-on-surface-variant uppercase">Active Term Sheets</span>
               <span className="text-[10px] font-label-mono text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
-                3 Pending
+                {pendingCount} Pending
               </span>
             </div>
-            <h3 className="font-headline-md text-xl text-on-surface font-bold group-hover:text-secondary transition-colors">Quantum Dynamics AI</h3>
-            <p className="text-xs text-on-surface-variant mt-1 mb-4">Apex Ventures leading with $4.5M offer</p>
+            <h3 className="font-headline-md text-xl text-on-surface font-bold group-hover:text-secondary transition-colors">{topOffer?.startupName || 'Quantum Dynamics AI'}</h3>
+            <p className="text-xs text-on-surface-variant mt-1 mb-4">
+              {topOffer ? `${topOffer.sharkName} leading with ${topOffer.amount} offer` : 'Apex Ventures leading with $4.5M offer'}
+            </p>
             <div className="flex items-center text-xs font-label-mono text-secondary font-bold">
               Compare Offers <ArrowRight className="w-3.5 h-3.5 ml-1 group-hover:translate-x-1 transition-transform" />
             </div>
@@ -136,7 +192,7 @@ export function Dashboard({
             <div className="flex justify-between items-start mb-4">
               <span className="text-xs font-label-mono text-on-surface-variant uppercase">Deal Analytics</span>
               <span className="text-[10px] font-label-mono text-tertiary bg-tertiary/10 px-2 py-0.5 rounded border border-tertiary/20">
-                $48.2M Deployed
+                {capitalDeployed} Deployed
               </span>
             </div>
             <h3 className="font-headline-md text-xl text-on-surface font-bold group-hover:text-tertiary transition-colors">Syndicate Insights</h3>
@@ -157,8 +213,8 @@ export function Dashboard({
             </div>
 
             <div className="flex items-center gap-2">
-              <button 
-                onClick={() => onOpenViewDeck('Nexus AI')}
+              <button
+                onClick={() => onOpenViewDeck(liveStartup?.name || 'Nexus AI')}
                 className="px-3 py-1.5 rounded-lg bg-surface-variant hover:bg-surface-bright text-xs font-label-mono text-on-surface border border-outline-variant"
               >
                 Inspect Pitch Deck
@@ -180,9 +236,15 @@ export function Dashboard({
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-black/40 to-transparent flex flex-col justify-end p-8">
               <div className="max-w-xl">
-                <span className="text-xs font-label-mono text-secondary uppercase bg-secondary/10 px-2.5 py-1 rounded border border-secondary/20">Seed Stage • AI & Data</span>
-                <h2 className="text-3xl font-bold text-white mt-2">Nexus AI Stage</h2>
-                <p className="text-sm text-gray-300 mt-1">Autonomous enterprise ML models. Seeking $1.5M for 10% equity.</p>
+                <span className="text-xs font-label-mono text-secondary uppercase bg-secondary/10 px-2.5 py-1 rounded border border-secondary/20">
+                  {liveStartup ? `${liveStartup.stage} • ${liveStartup.sector}` : 'Seed Stage • AI & Data'}
+                </span>
+                <h2 className="text-3xl font-bold text-white mt-2">{stageName}</h2>
+                <p className="text-sm text-gray-300 mt-1">
+                  {liveStartup
+                    ? `${liveStartup.description} Seeking ${liveStartup.fundingAsk} for ${liveStartup.equityOffered} equity.`
+                    : 'Autonomous enterprise ML models. Seeking $1.5M for 10% equity.'}
+                </p>
               </div>
             </div>
           </div>

@@ -10,7 +10,7 @@ import { Settings } from './components/Settings';
 import { TopBar } from './components/TopBar';
 import { LoginPage } from './components/LoginPage';
 import { NewBidModal, ViewDeckModal, SupportModal, SignOutModal } from './components/ModalsAndOverlays';
-import { notificationsApi, offersApi, authApi } from './lib/api';
+import { notificationsApi, offersApi, authApi, eventsApi, usersApi } from './lib/api';
 import { getSocket } from './lib/socket';
 
 type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
@@ -87,6 +87,17 @@ export default function App() {
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
 
+  // The startup currently on the live pitch stage (target for new bids)
+  const [liveStartupId, setLiveStartupId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (authStatus !== 'authenticated') return;
+
+    eventsApi.getLiveEvent()
+      .then((event) => setLiveStartupId(event?.startupId || event?.startup?.id || null))
+      .catch(() => {});
+  }, [authStatus]);
+
   // Fetch initial notifications from API when authenticated
   useEffect(() => {
     if (authStatus !== 'authenticated') return;
@@ -161,17 +172,8 @@ export default function App() {
     };
     setNotifications(prev => [newNotification, ...prev]);
 
-    const socket = getSocket();
-    socket.emit('submit_offer', {
-      startupId: 'nexus-ai',
-      amount: bid.amount,
-      equity: bid.equity,
-      sharkName: user.company || user.name,
-      terms: bid.terms
-    });
-
     offersApi.create({
-      startupId: 'nexus-ai',
+      startupId: liveStartupId || 'nexus-ai',
       amount: bid.amount,
       equity: bid.equity,
       terms: bid.terms
@@ -191,7 +193,7 @@ export default function App() {
       case 'negotiation': return 'Live Negotiation Room';
       case 'analytics': return 'Portfolio & Deal Flow Analytics';
       case 'settings': return 'Platform & Profile Settings';
-      default: return 'VentureFlow';
+      default: return 'Sharktank Simulator';
     }
   };
 
@@ -275,7 +277,13 @@ export default function App() {
           )}
 
           {currentView === 'settings' && (
-            <Settings user={user} onUpdateUser={(updated) => setUser(prev => prev ? { ...prev, ...updated } : prev)} />
+            <Settings user={user} onUpdateUser={(updated) => {
+              setUser(prev => prev ? { ...prev, ...updated } : prev);
+              const { name, company, avatar } = updated;
+              if (name || company || avatar) {
+                usersApi.updateMe({ name, company, avatar }).catch(() => {});
+              }
+            }} />
           )}
         </div>
       </main>

@@ -63,7 +63,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
         className="w-full max-w-md relative"
       >
         <div className="text-center mb-8">
-          <h1 className="font-headline-md text-3xl font-bold text-on-surface">VentureFlow</h1>
+          <h1 className="font-headline-md text-3xl font-bold text-on-surface">Sharktank Simulator</h1>
           <p className="font-label-mono text-xs text-on-surface-variant uppercase tracking-wider mt-1">
             Institutional Grade
           </p>

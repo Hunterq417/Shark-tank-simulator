@@ -1,20 +1,288 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
+
+# 🦈 Sharktank Simulator
+
+**A real-time investment bidding platform — pitch, bid, negotiate, and close deals live.**
+
+[![NestJS](https://img.shields.io/badge/Backend-NestJS-E0234E?logo=nestjs&logoColor=white)](https://nestjs.com/)
+[![React](https://img.shields.io/badge/Frontend-React_19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Prisma](https://img.shields.io/badge/ORM-Prisma-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io/)
+[![Socket.io](https://img.shields.io/badge/Realtime-Socket.io-010101?logo=socketdotio&logoColor=white)](https://socket.io/)
+[![Docker](https://img.shields.io/badge/Deploy-Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+[Quick Start](#-quick-start) · [Features](#-features) · [Architecture](#-architecture) · [API Docs](#-api-reference) · [Deployment](#-deployment)
+
 </div>
 
-# Run and deploy your AI Studio app
+---
 
-This contains everything you need to run your app locally.
+## 🎯 What is this?
 
-View your app in AI Studio: https://ai.studio/apps/c59348e4-e296-4c5b-8683-4e2a97d5f8e0
+**Sharktank Simulator** recreates the energy of a live *Shark Tank* pitch event as a web app. Founders present startups, investors ("Sharks") compete with real-time offers, negotiations happen in a live deal room, and an **AI Deal Analyzer** scores every term sheet on the fly.
 
-## Run Locally
+It's built for **startup incubators, university entrepreneurship programs, hackathons, and demo days** — anywhere you want a zero-friction, walk-up-and-play investment simulation.
 
-**Prerequisites:**  Node.js
+> **No sign-up required.** Type any email address, use password `password123`, and you're in — a fresh investor account is provisioned instantly. See [Demo Login](#-demo-login).
 
+---
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## ✨ Features
+
+<table>
+<tr>
+<td width="33%" valign="top">
+
+### 👨‍💼 Admin
+- Event creation & lifecycle control (start / pause / resume / end)
+- Live pitch queue management
+- Platform-wide broadcast announcements
+- Activity log & audit trail
+- Full user management
+
+</td>
+<td width="33%" valign="top">
+
+### 🚀 Founder
+- Startup profile & pitch deck management
+- Live pitch queue join
+- Real-time offers from multiple Sharks
+- Counter-offers & negotiation room
+- Deal timeline history
+
+</td>
+<td width="33%" valign="top">
+
+### 🦈 Shark (Investor)
+- Live event participation
+- Submit / edit / withdraw offers
+- Counter founder terms
+- AI-assisted deal analysis
+- Portfolio & deal history
+
+</td>
+</tr>
+</table>
+
+### 🌟 Signature features
+
+| Feature | Description |
+|---|---|
+| 🎯 **Virtual Deal Table** | Founder at the center, Sharks around them — offers animate live between participants |
+| 📜 **Live Deal Timeline** | Every offer, counter, and acceptance recorded to the second |
+| 🤖 **AI Deal Analyzer** | Rules-engine that scores valuation multiple, dilution, risk, and suggests a counter |
+| 📢 **Live Deal Ticker** | Bloomberg-style feed of offers, counters, and closed deals |
+| 🎬 **Negotiation Focus Mode** | Dedicated 1-on-1 deal room with live chat and AI insights |
+| ⏱️ **Live Pitch Timer** | Server-driven countdown broadcast to every connected client |
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart LR
+    subgraph Client["React 19 + Vite"]
+        UI[Dashboard / Live Pitch / Offers / Negotiation / Analytics]
+    end
+
+    subgraph Server["NestJS API"]
+        REST[REST Controllers]
+        WS[Socket.io Gateway]
+        Auth[JWT Auth + Guards]
+        Prisma[Prisma ORM]
+    end
+
+    DB[(PostgreSQL)]
+
+    UI -- "REST /api/*" --> REST
+    UI <-- "WebSocket events" --> WS
+    REST --> Auth
+    REST --> Prisma
+    WS --> Prisma
+    Prisma --> DB
+```
+
+**Realtime events** cover the full deal lifecycle: `offer_created`, `offer_updated`, `offer_withdrawn`, `counter_offer_created`, `negotiation_started`, `chat_message`, `deal_accepted`, `deal_rejected`, `timeline_updated`, `notification_created`, `queue_updated`, `online_users`, `timer_updated`.
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS, Framer Motion, Recharts |
+| **Backend** | NestJS 11, TypeScript, class-validator, Swagger (OpenAPI) |
+| **Database** | PostgreSQL, Prisma ORM (migrations included) |
+| **Realtime** | Socket.io (WebSocket gateway) |
+| **Auth** | JWT access + refresh tokens, bcrypt, role-based guards |
+| **DevOps** | Docker, Docker Compose, ESLint, Jest |
+
+---
+
+## 📂 Project Structure
+
+```
+sharktank-simulator/
+├── src/
+│   ├── components/         # React UI (Dashboard, LivePitch, Offers, Negotiation, Analytics...)
+│   ├── lib/                 # api.ts (REST client), socket.ts (Socket.io client)
+│   ├── server/               # NestJS backend
+│   │   ├── auth/              # JWT auth, register/login/refresh
+│   │   ├── users/ founders/ sharks/
+│   │   ├── events/ startups/ pitch/    # Events, startup profiles, live pitch queue
+│   │   ├── offers/ negotiations/ deals/
+│   │   ├── notifications/ timeline/ admin/
+│   │   ├── deal-analyzer/      # AI Deal Analyzer rules engine
+│   │   ├── realtime/           # Socket.io gateway
+│   │   ├── prisma/             # PrismaService/Module
+│   │   └── common/             # Guards, decorators, filters, interceptors
+│   └── App.tsx
+├── prisma/
+│   ├── schema.prisma          # Full data model (14 models)
+│   ├── migrations/            # SQL migrations
+│   └── seed.ts                 # Demo data seeder
+├── test/                       # e2e tests
+├── Dockerfile
+├── docker-compose.yml
+└── vite.config.ts
+```
+
+---
+
+## 🚀 Quick Start
+
+### Option 1 — Docker (recommended)
+
+```bash
+git clone https://github.com/Hunterq417/Shark-tank-simulator.git
+cd Shark-tank-simulator
+docker compose up --build
+```
+
+That's it. This spins up PostgreSQL + the built app in one container.
+
+- App: **http://localhost:3000**
+- API docs (Swagger): **http://localhost:3000/api/docs**
+
+Seed demo data (startups, sharks, offers, deals):
+
+```bash
+npm install
+npm run seed
+```
+
+### Option 2 — Local development
+
+```bash
+npm install
+cp .env.example .env          # then point DATABASE_URL at your Postgres instance
+npm run prisma:migrate
+npm run seed
+npm run dev                   # runs Vite (frontend) + Nest (backend) together
+```
+
+- Frontend dev server: **http://localhost:5173** (proxies `/api` and `/socket.io` to the backend)
+- Backend: **http://localhost:3000**
+
+### 🔑 Demo Login
+
+No registration needed:
+
+| Field | Value |
+|---|---|
+| **Email** | *any* email address — a new investor account is created on first login |
+| **Password** | `password123` |
+
+Or use any of the seeded accounts (founders, sharks, admin) — same password.
+
+---
+
+## ⚙️ Environment Variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `DATABASE_URL` | PostgreSQL connection string | — |
+| `JWT_SECRET` | Access token signing secret | — |
+| `JWT_EXPIRES_IN` | Access token lifetime | `1d` |
+| `REFRESH_SECRET` | Refresh token signing secret | — |
+| `REFRESH_EXPIRES_IN` | Refresh token lifetime | `7d` |
+| `PORT` | Server port | `3000` |
+| `CORS_ORIGIN` | Allowed CORS origin(s) | `*` |
+
+See [.env.example](.env.example).
+
+---
+
+## 📊 API Reference
+
+Full interactive OpenAPI/Swagger documentation is generated automatically and served at:
+
+```
+http://localhost:3000/api/docs
+```
+
+Covers all REST endpoints — auth, users, founders, sharks, events, startups, live pitch queue, offers, counter-offers, negotiations, deals, AI deal analyzer, notifications, timeline, and admin controls.
+
+---
+
+## 🧪 Testing
+
+```bash
+npm run lint          # type-check + ESLint
+npm test               # unit tests (Jest)
+npm run test:cov        # with coverage
+npm run test:e2e        # end-to-end (requires a running database)
+```
+
+---
+
+## 🐳 Deployment
+
+### Docker Compose (self-hosted)
+
+```bash
+docker compose up --build -d
+```
+
+Single container serves the built frontend, the REST API, and the Socket.io gateway on one port, backed by a PostgreSQL container. Migrations run automatically on container start.
+
+### Notes for platform deployment (Vercel, Railway, Render, Fly.io, etc.)
+
+This is a **stateful NestJS server with persistent WebSocket connections**, not a stateless serverless function — deploy it to a platform that supports long-running Node processes (Railway, Render, Fly.io, a VPS, or Vercel's Node runtime with a compatible WebSocket setup). Point `DATABASE_URL` at a managed Postgres instance (Neon, Supabase, Railway, RDS, etc.) and set the JWT secrets as environment variables on the platform.
+
+---
+
+## 🔒 Security
+
+- JWT access + refresh tokens (refresh tokens stored hashed)
+- bcrypt password hashing
+- Role-based route guards (`ADMIN` / `FOUNDER` / `SHARK`)
+- Global validation pipes on every input
+- Helmet HTTP headers, CORS configuration, request throttling
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m "Add amazing feature"`
+4. Push and open a Pull Request
+
+---
+
+## 📄 License
+
+MIT — see [LICENSE](LICENSE) for details.
+
+---
+
+<div align="center">
+
+**Built for founders, investors, and everyone who's ever wanted to sit at the deal table.**
+
+⭐ Star this repo if you found it useful!
+
+</div>

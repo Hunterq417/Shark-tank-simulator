@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { ViewState } from '../types';
 import { Play, Pause, Mic, MicOff, MoreHorizontal, FileText, CheckCircle2 } from 'lucide-react';
+import { eventsApi, pitchApi, sharksApi } from '../lib/api';
+import { getSocket } from '../lib/socket';
 
 interface LivePitchProps {
   onNavigate: (view: ViewState) => void;
@@ -9,15 +11,88 @@ interface LivePitchProps {
   onOpenViewDeck: (company: string) => void;
 }
 
+interface LiveOffer {
+  id: string;
+  sharkName: string;
+  amount: string;
+  equity: string;
+  createdAt: string;
+}
+
+function timeAgo(isoDate: string): string {
+  const seconds = Math.floor((Date.now() - new Date(isoDate).getTime()) / 1000);
+  if (seconds < 60) return seconds <= 5 ? 'Just now' : `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h ago`;
+}
+
 export function LivePitch({ onNavigate, onOpenNewBid, onOpenViewDeck }: LivePitchProps) {
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  const [startup, setStartup] = useState<{
+    name: string; fundingAsk: string; equityOffered: string; valuation: string; stage: string; description: string;
+  } | null>(null);
+  const [pitchStats, setPitchStats] = useState<{ totalCommitted: string; percentageCommitted: number } | null>(null);
+  const [offers, setOffers] = useState<LiveOffer[]>([]);
+  const [investors, setInvestors] = useState<{ id: string; name: string; hasOffered: boolean }[]>([]);
+
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
+
+  const loadLiveEvent = () => {
+    eventsApi.getLiveEvent()
+      .then((event) => {
+        if (event?.startup) {
+          setStartup({
+            name: event.startup.name,
+            fundingAsk: event.startup.fundingAsk,
+            equityOffered: event.startup.equityOffered,
+            valuation: event.startup.valuation,
+            stage: event.startup.stage,
+            description: event.startup.description,
+          });
+          const sortedOffers = [...(event.startup.offers || [])]
+            .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+            .slice(0, 3);
+          setOffers(sortedOffers);
+        }
+        if (event?.id) {
+          pitchApi.getForEvent(event.id)
+            .then((pitch) => setPitchStats({ totalCommitted: pitch.totalCommitted, percentageCommitted: pitch.percentageCommitted }))
+            .catch(() => {});
+        }
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadLiveEvent();
+
+    sharksApi.getAll()
+      .then((sharks) => {
+        if (Array.isArray(sharks)) {
+          setInvestors(sharks.slice(0, 4).map((s: any) => ({ id: s.id, name: s.fundName, hasOffered: false })));
+        }
+      })
+      .catch(() => {});
+
+    const socket = getSocket();
+    const refresh = () => loadLiveEvent();
+    socket.on('offer_created', refresh);
+    socket.on('offer_updated', refresh);
+    return () => {
+      socket.off('offer_created', refresh);
+      socket.off('offer_updated', refresh);
+    };
+  }, []);
+
+  const displayName = startup?.name || 'Nexus AI';
 
   return (
     <div className="flex-1 flex flex-col h-full bg-background relative overflow-hidden">
@@ -50,7 +125,7 @@ export function LivePitch({ onNavigate, onOpenNewBid, onOpenViewDeck }: LivePitc
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg">
                     N
                   </div>
-                  <h1 className="font-headline-lg text-3xl text-on-surface font-bold">Nexus AI</h1>
+                  <h1 className="font-headline-lg text-3xl text-on-surface font-bold">{displayName}</h1>
                </div>
                <div className="flex items-center gap-2 bg-secondary/10 text-secondary px-3 py-1 rounded-full border border-secondary/20">
                   <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
@@ -103,8 +178,8 @@ export function LivePitch({ onNavigate, onOpenNewBid, onOpenViewDeck }: LivePitc
                            </button>
                         </div>
 
-                        <button 
-                          onClick={() => onOpenViewDeck('Nexus AI')}
+                        <button
+                          onClick={() => onOpenViewDeck(displayName)}
                           className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 backdrop-blur-md text-xs font-label-mono uppercase transition-colors cursor-pointer"
                         >
                           <FileText className="w-4 h-4 text-secondary" />
@@ -120,35 +195,35 @@ export function LivePitch({ onNavigate, onOpenNewBid, onOpenViewDeck }: LivePitc
                     <div className="space-y-4 font-label-mono text-sm">
                       <div className="flex justify-between">
                          <span className="text-on-surface-variant">Funding Request:</span>
-                         <span className="text-on-surface font-bold">$1.5M</span>
+                         <span className="text-on-surface font-bold">{startup?.fundingAsk || '$1.5M'}</span>
                       </div>
                       <div className="flex justify-between">
                          <span className="text-on-surface-variant">Equity Offered:</span>
-                         <span className="text-on-surface font-bold">10%</span>
+                         <span className="text-on-surface font-bold">{startup?.equityOffered || '10%'}</span>
                       </div>
                       <div className="flex justify-between">
                          <span className="text-on-surface-variant">Valuation:</span>
-                         <span className="text-on-surface font-bold">$15M</span>
+                         <span className="text-on-surface font-bold">{startup?.valuation || '$15M'}</span>
                       </div>
                       <div className="flex justify-between">
                          <span className="text-on-surface-variant">Stage:</span>
-                         <span className="text-on-surface">Seed</span>
+                         <span className="text-on-surface">{startup?.stage || 'Seed'}</span>
                       </div>
                     </div>
 
                     <div className="mt-6">
                       <div className="flex justify-between text-sm mb-2">
-                         <span className="font-bold text-on-surface">$850K <span className="font-normal text-on-surface-variant">Committed</span></span>
-                         <span className="text-on-surface-variant font-label-mono">57%</span>
+                         <span className="font-bold text-on-surface">{pitchStats?.totalCommitted || '$850K'} <span className="font-normal text-on-surface-variant">Committed</span></span>
+                         <span className="text-on-surface-variant font-label-mono">{pitchStats?.percentageCommitted ?? 57}%</span>
                       </div>
                       <div className="h-2 w-full bg-surface-variant rounded-full overflow-hidden">
-                         <div className="h-full bg-secondary w-[57%] rounded-full" />
+                         <div className="h-full bg-secondary rounded-full" style={{ width: `${pitchStats?.percentageCommitted ?? 57}%` }} />
                       </div>
                     </div>
                   </div>
 
                   <p className="text-sm text-on-surface-variant px-2 leading-relaxed">
-                    Nexus AI is pioneering autonomous systems for enterprise machine learning solutions, bridging the gap between data and actionable intelligence.
+                    {startup?.description || 'Nexus AI is pioneering autonomous systems for enterprise machine learning solutions, bridging the gap between data and actionable intelligence.'}
                   </p>
 
                   <div className="mt-auto space-y-2">
@@ -180,9 +255,19 @@ export function LivePitch({ onNavigate, onOpenNewBid, onOpenViewDeck }: LivePitc
              {/* Scrolling ticker */}
              <div className="flex-1 overflow-x-auto relative no-scrollbar">
                 <div className="flex gap-4 items-center">
-                   <OfferChip name="Apex Ventures" amount="$500K" equity="3.5%" time="30s ago" onClick={() => onNavigate('offers')} />
-                   <OfferChip name="Silver Lake" amount="$250K" time="2m ago" highlight onClick={() => onNavigate('offers')} />
-                   <OfferChip name="Sarah Jenkins" amount="$1.5M" equity="10%" time="Just now" highlight onClick={() => onNavigate('offers')} />
+                   {offers.length > 0 ? offers.map((offer, i) => (
+                     <OfferChip
+                       key={offer.id}
+                       name={offer.sharkName}
+                       amount={offer.amount}
+                       equity={offer.equity}
+                       time={timeAgo(offer.createdAt)}
+                       highlight={i === 0}
+                       onClick={() => onNavigate('offers')}
+                     />
+                   )) : (
+                     <span className="text-xs text-on-surface-variant font-label-mono">No offers yet — be the first to bid.</span>
+                   )}
                 </div>
              </div>
           </div>
@@ -197,10 +282,21 @@ export function LivePitch({ onNavigate, onOpenNewBid, onOpenViewDeck }: LivePitc
               </button>
            </div>
            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              <InvestorCard name="Apex Ventures" status="Considering" value="$500K" avatar="A" onClick={() => triggerToast('Selected Apex Ventures')} />
-              <InvestorCard name="Sarah Jenkins (Angel)" status="Offer Submitted" statusColor="text-secondary" value="$1.5M Offer" highlight avatarImg="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=688&auto=format&fit=crop" onClick={() => triggerToast('Selected Sarah Jenkins')} />
-              <InvestorCard name="QuantumLedger" status="Participated" statusColor="text-primary" value="$500K" avatar="Q" onClick={() => triggerToast('Selected QuantumLedger')} />
-              <InvestorCard name="Anata Capital" status="Considering" avatarImg="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=256&auto=format&fit=crop" onClick={() => triggerToast('Selected Anata Capital')} />
+              {investors.map((investor) => {
+                const offer = offers.find((o) => o.sharkName === investor.name);
+                return (
+                  <InvestorCard
+                    key={investor.id}
+                    name={investor.name}
+                    status={offer ? 'Offer Submitted' : 'Considering'}
+                    statusColor={offer ? 'text-secondary' : undefined}
+                    value={offer ? `${offer.amount} Offer` : undefined}
+                    highlight={Boolean(offer)}
+                    avatar={investor.name.charAt(0)}
+                    onClick={() => triggerToast(`Selected ${investor.name}`)}
+                  />
+                );
+              })}
            </div>
         </div>
       </div>

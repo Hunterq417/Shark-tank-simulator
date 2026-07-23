@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -9,7 +7,9 @@ services:
       POSTGRES_PASSWORD: ventureflow_password
       POSTGRES_DB: ventureflow_db
     ports:
-      - "5432:5432"
+      # Host port shifted off 5432 to avoid colliding with a native local Postgres install.
+      # Containers still reach this over the internal Docker network at postgres:5432.
+      - "55432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -30,7 +30,10 @@ services:
       PORT: 3000
       DATABASE_URL: "postgresql://ventureflow:ventureflow_password@postgres:5432/ventureflow_db?schema=public"
       JWT_SECRET: "ventureflow_super_secret_jwt_key_2026_prod"
+      JWT_EXPIRES_IN: "1d"
       REFRESH_SECRET: "ventureflow_super_secret_refresh_key_2026_prod"
+      REFRESH_EXPIRES_IN: "7d"
+      CORS_ORIGIN: "*"
     depends_on:
       postgres:
         condition: service_healthy

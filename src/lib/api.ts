@@ -52,7 +52,25 @@ export const authApi = {
 // Events & Pitch API
 export const eventsApi = {
   getLiveEvent: () => apiFetch<any>('/events/live'),
-  getAllEvents: () => apiFetch<any[]>('/events')
+  getAllEvents: () => apiFetch<any[]>('/events'),
+  getById: (id: string) => apiFetch<any>(`/events/${id}`),
+  start: (id: string) => apiFetch<any>(`/events/${id}/start`, { method: 'POST' }),
+  pause: (id: string) => apiFetch<any>(`/events/${id}/pause`, { method: 'POST' }),
+  resume: (id: string) => apiFetch<any>(`/events/${id}/resume`, { method: 'POST' }),
+  end: (id: string) => apiFetch<any>(`/events/${id}/end`, { method: 'POST' })
+};
+
+// Pitch sessions & queue
+export const pitchApi = {
+  getForEvent: (eventId: string) => apiFetch<any>(`/pitch/event/${eventId}`)
+};
+
+export const queueApi = {
+  list: (eventId: string) => apiFetch<any[]>(`/queue?eventId=${eventId}`),
+  join: (data: { eventId: string; startupId: string }) =>
+    apiFetch<any>('/queue/join', { method: 'POST', body: JSON.stringify(data) }),
+  advance: (eventId: string) => apiFetch<any[]>(`/queue/advance/${eventId}`, { method: 'POST' }),
+  skip: (id: string) => apiFetch<any[]>(`/queue/${id}/skip`, { method: 'POST' })
 };
 
 // Offers API
@@ -75,7 +93,59 @@ export const offersApi = {
   reject: (offerId: string) =>
     apiFetch<any>(`/offers/${offerId}/reject`, {
       method: 'POST'
+    }),
+  withdraw: (offerId: string) =>
+    apiFetch<any>(`/offers/${offerId}/withdraw`, {
+      method: 'POST'
     })
+};
+
+// Startups API
+export const startupsApi = {
+  getAll: () => apiFetch<any[]>('/startups'),
+  getById: (id: string) => apiFetch<any>(`/startups/${id}`),
+  create: (data: {
+    name: string; sector: string; stage: string; description?: string;
+    fundingAsk: string; equityOffered: string; valuation: string; arr?: string; clients?: string; pitchDeckUrl?: string;
+  }) => apiFetch<any>('/startups', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: Record<string, unknown>) =>
+    apiFetch<any>(`/startups/${id}`, { method: 'PATCH', body: JSON.stringify(data) })
+};
+
+// Timeline API
+export const timelineApi = {
+  getForStartup: (startupId: string) => apiFetch<any[]>(`/timeline/${startupId}`)
+};
+
+// Users API
+export const usersApi = {
+  getMe: () => apiFetch<any>('/users/me'),
+  updateMe: (data: { name?: string; company?: string; avatar?: string }) =>
+    apiFetch<any>('/users/me', { method: 'PATCH', body: JSON.stringify(data) })
+};
+
+// Founders API
+export const foundersApi = {
+  getMe: () => apiFetch<any>('/founders/me'),
+  getMyStartup: () => apiFetch<any>('/founders/me/startup'),
+  updateMe: (data: { bio?: string; startupId?: string }) =>
+    apiFetch<any>('/founders/me', { method: 'PATCH', body: JSON.stringify(data) })
+};
+
+// Sharks API
+export const sharksApi = {
+  getAll: () => apiFetch<any[]>('/sharks'),
+  getMe: () => apiFetch<any>('/sharks/me'),
+  updateMe: (data: { fundName?: string; minTicket?: string; maxTicket?: string }) =>
+    apiFetch<any>('/sharks/me', { method: 'PATCH', body: JSON.stringify(data) }),
+  getPortfolio: (id: string) => apiFetch<any>(`/sharks/${id}/portfolio`)
+};
+
+// Admin API
+export const adminApi = {
+  getActivityLogs: () => apiFetch<any[]>('/admin/activity-logs'),
+  broadcast: (data: { title: string; message: string }) =>
+    apiFetch<any>('/admin/broadcast', { method: 'POST', body: JSON.stringify(data) })
 };
 
 // Deals & AI Deal Analyzer API

@@ -1,5 +1,5 @@
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -7,28 +7,95 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model User {
-  id           String         @id @default(uuid())
-  email        String         @unique
-  passwordHash String
-  name         String
-  role         String         // ADMIN, FOUNDER, SHARK
-  company      String?
-  avatar       String?
-  balance      String?        @default("$12,500,000")
-  dealsClosed  Int            @default(0)
-  refreshToken String?
-  createdAt    DateTime       @default(now())
+enum Role {
+  ADMIN
+  FOUNDER
+  SHARK
+}
 
-  founders     Founder[]
-  sharks       Shark[]
+enum LiveStatus {
+  UPCOMING
+  LIVE
+  PAUSED
+  ENDED
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COUNTERED
+  WITHDRAWN
+}
+
+enum SenderRole {
+  FOUNDER
+  SHARK
+  SYSTEM
+}
+
+enum NegotiationStatus {
+  ACTIVE
+  ACCEPTED
+  REJECTED
+}
+
+enum DealStatus {
+  CLOSED
+  IN_TERM_SHEET
+}
+
+enum NotificationType {
+  OFFER
+  SYSTEM
+  NEGOTIATION
+  EVENT
+}
+
+enum TimelineCategory {
+  OFFER
+  COUNTER
+  ACCEPTANCE
+  PITCH
+  QUEUE
+  NEGOTIATION
+}
+
+enum QueueStatus {
+  WAITING
+  ACTIVE
+  DONE
+  SKIPPED
+}
+
+model User {
+  id                 String    @id @default(uuid())
+  email              String    @unique
+  passwordHash       String
+  name               String
+  role               Role
+  company            String?
+  avatar             String?
+  balance            String?   @default("$12,500,000")
+  dealsClosed        Int       @default(0)
+  refreshTokenHash   String?
+  resetCode          String?
+  resetCodeExpiresAt DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  founders      Founder[]
+  sharks        Shark[]
   notifications Notification[]
-  activityLogs ActivityLog[]
+  activityLogs  ActivityLog[]
+  chatMessages  ChatMessage[]
+
+  @@index([role])
 }
 
 model Startup {
-  id             String          @id @default(uuid())
-  name           String          @unique
+  id             String   @id @default(uuid())
+  name           String   @unique
   logo           String?
   sector         String
   stage          String
@@ -38,8 +105,9 @@ model Startup {
   valuation      String
   arr            String?
   clients        String?
-  founderId      String?
-  createdAt      DateTime        @default(now())
+  pitchDeckUrl   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   founders       Founder[]
   events         Event[]
@@ -48,6 +116,7 @@ model Startup {
   negotiations   Negotiation[]
   deals          Deal[]
   timelineEvents TimelineEvent[]
+  queueEntries   PitchQueueEntry[]
 }
 
 model Founder {
@@ -57,29 +126,41 @@ model Founder {
   startupId String?
   startup   Startup? @relation(fields: [startupId], references: [id], onDelete: SetNull)
   bio       String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([startupId])
 }
 
 model Shark {
   id            String   @id @default(uuid())
   userId        String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   fundName      String
   minTicket     String?  @default("$100K")
   maxTicket     String?  @default("$5M")
   escrowBalance String?  @default("$25,000,000")
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Event {
-  id           String   @id @default(uuid())
+  id           String     @id @default(uuid())
   title        String
   companyName  String
   pitchDeckUrl String?
-  liveStatus   String   @default("LIVE") // UPCOMING, LIVE, ENDED
-  startTime    DateTime @default(now())
+  liveStatus   LiveStatus @default(UPCOMING)
+  startTime    DateTime   @default(now())
+  endedAt      DateTime?
   startupId    String
-  startup      Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  startup      Startup    @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
 
   pitches      Pitch[]
+  queueEntries PitchQueueEntry[]
+
+  @@index([liveStatus])
 }
 
 model Pitch {
@@ -92,6 +173,23 @@ model Pitch {
   percentageCommitted Float    @default(57.0)
   videoUrl            String?
   transcript          String?
+  createdAt           DateTime @default(now())
+
+  @@index([eventId])
+}
+
+model PitchQueueEntry {
+  id        String      @id @default(uuid())
+  eventId   String
+  event     Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  startupId String
+  startup   Startup     @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  position  Int
+  status    QueueStatus @default(WAITING)
+  joinedAt  DateTime    @default(now())
+
+  @@unique([eventId, startupId])
+  @@index([eventId, position])
 }
 
 model Offer {
@@ -104,80 +202,103 @@ model Offer {
   equity        String
   valuation     String?
   terms         String
-  status        String         @default("PENDING") // PENDING, ACCEPTED, REJECTED, COUNTERED
+  status        OfferStatus    @default(PENDING)
+  withdrawnAt   DateTime?
   createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   counterOffers CounterOffer[]
   negotiations  Negotiation[]
+
+  @@index([startupId])
+  @@index([status])
 }
 
 model CounterOffer {
-  id         String   @id @default(uuid())
+  id         String     @id @default(uuid())
   offerId    String
-  offer      Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
-  senderRole String   // FOUNDER, SHARK
+  offer      Offer      @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  senderRole SenderRole
   senderName String
   amount     String
   equity     String
   terms      String
-  createdAt  DateTime @default(now())
+  createdAt  DateTime   @default(now())
+
+  @@index([offerId])
 }
 
 model Negotiation {
-  id           String        @id @default(uuid())
+  id           String            @id @default(uuid())
   offerId      String
-  offer        Offer         @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  offer        Offer             @relation(fields: [offerId], references: [id], onDelete: Cascade)
   startupId    String
-  startup      Startup       @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  startup      Startup           @relation(fields: [startupId], references: [id], onDelete: Cascade)
   sharkId      String?
-  status       String        @default("ACTIVE") // ACTIVE, ACCEPTED, REJECTED
-  roomCode     String        @default("ROOM-101")
-  focusMode    Boolean       @default(false)
+  status       NegotiationStatus @default(ACTIVE)
+  roomCode     String            @default("ROOM-101")
+  focusMode    Boolean           @default(false)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
 
   chatMessages ChatMessage[]
+
+  @@index([roomCode])
+  @@index([startupId])
 }
 
 model ChatMessage {
   id            String      @id @default(uuid())
   negotiationId String
   negotiation   Negotiation @relation(fields: [negotiationId], references: [id], onDelete: Cascade)
-  senderRole    String      // Founder, Investor, System
+  senderId      String?
+  sender        User?       @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  senderRole    SenderRole
   senderName    String
   text          String
   createdAt     DateTime    @default(now())
+
+  @@index([negotiationId])
 }
 
 model Deal {
-  id           String   @id @default(uuid())
+  id           String     @id @default(uuid())
   startupId    String
-  startup      Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  startup      Startup    @relation(fields: [startupId], references: [id], onDelete: Cascade)
   sharkId      String?
   leadInvestor String
   dealSize     String
   valuation    String
-  status       String   @default("Closed") // Closed, In Term Sheet
-  closedAt     DateTime @default(now())
+  status       DealStatus @default(CLOSED)
+  closedAt     DateTime   @default(now())
+
+  @@index([startupId])
 }
 
 model Notification {
-  id        String   @id @default(uuid())
+  id        String           @id @default(uuid())
   userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
   message   String
-  read      Boolean  @default(false)
-  type      String   // offer, system, negotiation, event
-  createdAt DateTime @default(now())
+  read      Boolean          @default(false)
+  type      NotificationType
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([read])
 }
 
 model TimelineEvent {
-  id          String   @id @default(uuid())
+  id          String           @id @default(uuid())
   startupId   String
-  startup     Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  startup     Startup          @relation(fields: [startupId], references: [id], onDelete: Cascade)
   title       String
   description String
-  timestamp   DateTime @default(now())
-  category    String   // offer, counter, acceptance, pitch
+  timestamp   DateTime         @default(now())
+  category    TimelineCategory
+
+  @@index([startupId])
 }
 
 model ActivityLog {
@@ -187,4 +308,6 @@ model ActivityLog {
   action    String
   details   String
   timestamp DateTime @default(now())
+
+  @@index([userId])
 }

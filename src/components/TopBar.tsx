@@ -50,7 +50,7 @@ export function TopBar({
       {/* Title / Breadcrumb */}
       <div className="flex items-center gap-3">
         <h2 className="font-headline-md text-lg text-on-surface font-bold">
-          {title || 'VentureFlow Platform'}
+          {title || 'Sharktank Simulator'}
         </h2>
       </div>
 
