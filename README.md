@@ -12,6 +12,11 @@
 [![Socket.io](https://img.shields.io/badge/Realtime-Socket.io-010101?logo=socketdotio&logoColor=white)](https://socket.io/)
 [![Docker](https://img.shields.io/badge/Deploy-Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-sharktank--vert.vercel.app-000000?logo=vercel&logoColor=white)](https://sharktank-vert.vercel.app)
+
+### 🔴 [**Try the live demo →**](https://sharktank-vert.vercel.app)
+
+*Frontend on [Vercel](https://sharktank-vert.vercel.app) · API on [Render](https://sharktank-simulator-api.onrender.com/api/docs)*
 
 [Quick Start](#-quick-start) · [Features](#-features) · [Architecture](#-architecture) · [API Docs](#-api-reference) · [Deployment](#-deployment)
 
@@ -240,17 +245,43 @@ npm run test:e2e        # end-to-end (requires a running database)
 
 ## 🐳 Deployment
 
-### Docker Compose (self-hosted)
+This app runs in production as a **split deployment**:
+
+```mermaid
+flowchart LR
+    User((Browser)) --> Vercel[Vercel<br/>React frontend]
+    Vercel -- "REST + WebSocket" --> Render[Render<br/>NestJS API]
+    Render --> RenderDB[(Render<br/>PostgreSQL)]
+```
+
+### Frontend → Vercel
+
+The frontend is a static Vite build — a natural fit for Vercel's edge network. [`vercel.json`](vercel.json) pins the build command and output directory:
+
+```bash
+npm i -g vercel
+vercel link
+vercel env add VITE_API_BASE_URL production   # e.g. https://your-api.onrender.com
+vercel --prod
+```
+
+### Backend → Render
+
+The API is a stateful NestJS server with persistent WebSocket connections, so it needs a platform that runs long-lived Node processes — not a serverless function. [`render.yaml`](render.yaml) is a Blueprint that provisions everything in one shot:
+
+1. Render dashboard → **New → Blueprint** → select this repo
+2. Render reads `render.yaml` and creates a managed **PostgreSQL** database plus a **Docker web service** built from the existing [`Dockerfile`](Dockerfile), with `DATABASE_URL` and JWT secrets wired automatically
+3. Migrations (`prisma migrate deploy`) run automatically on every deploy, before the server starts
+
+Any Node-process host works the same way (Railway, Fly.io, a VPS) — just point `DATABASE_URL` at a managed Postgres instance and set the JWT secrets as environment variables.
+
+### Self-hosted (single container)
 
 ```bash
 docker compose up --build -d
 ```
 
-Single container serves the built frontend, the REST API, and the Socket.io gateway on one port, backed by a PostgreSQL container. Migrations run automatically on container start.
-
-### Notes for platform deployment (Vercel, Railway, Render, Fly.io, etc.)
-
-This is a **stateful NestJS server with persistent WebSocket connections**, not a stateless serverless function — deploy it to a platform that supports long-running Node processes (Railway, Render, Fly.io, a VPS, or Vercel's Node runtime with a compatible WebSocket setup). Point `DATABASE_URL` at a managed Postgres instance (Neon, Supabase, Railway, RDS, etc.) and set the JWT secrets as environment variables on the platform.
+One container serves the built frontend, REST API, and Socket.io gateway together on one port, backed by a PostgreSQL container — the simplest option if you don't want a split deployment.
 
 ---
 
