@@ -4,6 +4,17 @@
 const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 const API_BASE = `${API_ORIGIN}/api`;
 
+// Free-tier hosts (e.g. Render) spin the backend down after inactivity; the
+// first request after a cold spell can take 10-50s and may bounce off a
+// gateway error while the container boots. Retry transient failures instead
+// of surfacing them as "invalid credentials" or similar to the user.
+const RETRY_DELAYS_MS = [2000, 5000, 10000];
+const RETRYABLE_STATUSES = new Set([502, 503, 504]);
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('access_token');
   const headers: Record<string, string> = {
@@ -15,17 +26,39 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers
-  });
+  let lastError: unknown;
 
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(errData.error || `HTTP ${res.status}`);
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        ...options,
+        headers
+      });
+
+      if (!res.ok) {
+        if (RETRYABLE_STATUSES.has(res.status) && attempt < RETRY_DELAYS_MS.length) {
+          await sleep(RETRY_DELAYS_MS[attempt]);
+          continue;
+        }
+        const errData = await res.json().catch(() => ({ error: 'Request failed' }));
+        throw new Error(errData.error || `HTTP ${res.status}`);
+      }
+
+      return await res.json();
+    } catch (err) {
+      // A thrown TypeError here means the fetch itself failed (network error,
+      // DNS not ready yet, etc.) rather than the server responding with an
+      // error status — also worth retrying while the backend wakes up.
+      if (err instanceof TypeError && attempt < RETRY_DELAYS_MS.length) {
+        lastError = err;
+        await sleep(RETRY_DELAYS_MS[attempt]);
+        continue;
+      }
+      throw err;
+    }
   }
 
-  return res.json();
+  throw lastError instanceof Error ? lastError : new Error('Request failed');
 }
 
 // Auth API
