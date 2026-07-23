@@ -1,4 +1,8 @@
-const API_BASE = '/api';
+// In split deployments (e.g. frontend on Vercel, backend on Render), set
+// VITE_API_BASE_URL to the backend's origin. Left unset, it defaults to the
+// same origin (Docker Compose / local dev proxy).
+const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+const API_BASE = `${API_ORIGIN}/api`;
 
 export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('access_token');
