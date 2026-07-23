@@ -193,14 +193,21 @@ npm run dev                   # runs Vite (frontend) + Nest (backend) together
 
 ### 🔑 Demo Login
 
-No registration needed:
+No registration needed — just use these on the sign-in screen:
 
 | Field | Value |
 |---|---|
-| **Email** | *any* email address — a new investor account is created on first login |
+| **Email / User ID** | `demo@sharktank.io` *(or literally any email address — a new investor account is created on first login)* |
 | **Password** | `password123` |
 
-Or use any of the seeded accounts (founders, sharks, admin) — same password.
+Or sign in as one of the pre-seeded accounts (same password for all):
+
+| Role | Email |
+|---|---|
+| 🦈 Shark | `a.wright@apexventures.io` |
+| 🦈 Shark | `sarah@jenkinsangels.com` |
+| 🚀 Founder | `david@nexus.ai` |
+| 👨‍💼 Admin | `admin@ventureflow.io` |
 
 ---
 
