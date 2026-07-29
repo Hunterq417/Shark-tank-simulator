@@ -80,19 +80,17 @@ export function Offers({ onNavigate, onOpenNewBid }: OffersProps) {
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto p-8">
         <div className="max-w-6xl mx-auto space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-outline-variant pb-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-outline-variant pb-6">
             <div>
-              <h1 className="font-headline-lg text-3xl font-bold text-on-surface mb-2">Active Term Sheet Offers</h1>
-              <p className="text-on-surface-variant text-sm font-label-mono uppercase tracking-wider">
-                Target Company: <span className="text-primary font-bold">{targetCompany}</span>
-              </p>
+              <p className="text-on-surface-variant text-[10px] font-label-mono uppercase tracking-[0.3em] mb-2">Term Sheets on the Table</p>
+              <h1 className="font-display text-4xl font-semibold text-on-surface tracking-tight">{targetCompany}</h1>
             </div>
 
             <button
               onClick={onOpenNewBid}
-              className="px-5 py-2.5 rounded-xl bg-secondary text-on-secondary font-label-mono font-bold text-xs uppercase tracking-wider hover:bg-secondary/90 transition-all shadow-lg shadow-secondary/20 cursor-pointer"
+              className="px-5 py-2.5 border border-primary/40 text-primary font-label-mono text-[11px] uppercase tracking-[0.15em] hover:bg-primary hover:text-on-primary transition-colors cursor-pointer"
             >
-              + Solicit Custom Bid
+              Solicit Custom Bid
             </button>
           </div>
 
@@ -134,67 +132,68 @@ function OfferCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay }}
-      className={`bg-surface-container rounded-2xl border p-6 relative overflow-hidden transition-all ${
-        isAccepted
-          ? 'border-secondary shadow-[0_0_40px_rgba(16,185,129,0.2)] bg-secondary/5'
-          : highlight
-            ? 'border-secondary/60 shadow-[0_0_30px_rgba(16,185,129,0.08)]'
-            : 'border-outline-variant'
-      }`}
+      transition={{ delay, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      className="paper brass-edge pl-7 pr-6 py-7 flex flex-col"
     >
-      {highlight && <div className="absolute top-0 left-0 w-full h-1.5 bg-secondary" />}
-      <div className="flex justify-between items-start mb-6">
+      {/* Document header */}
+      <div className="flex justify-between items-start pb-4 mb-5 border-b border-[#d8d0bf]">
         <div>
-          <h3 className="font-headline-md text-lg text-on-surface font-bold">{offer.sharkName}</h3>
-          <span className="text-xs text-on-surface-variant">Investor</span>
+          <p className="text-[9px] font-label-mono uppercase tracking-[0.25em] text-[#a09883]">Lead Investor</p>
+          <h3 className="font-display text-xl font-semibold text-[#1c1a15] mt-1">{offer.sharkName}</h3>
         </div>
-        {(isAccepted || highlight) && (
-          <span className="bg-secondary/20 text-secondary text-[10px] font-label-mono uppercase tracking-wider px-2.5 py-1 rounded-full border border-secondary/30 font-bold">
-            {isAccepted ? 'Accepted' : 'Best Valuation'}
+        {isAccepted ? (
+          <span className="text-[9px] font-label-mono uppercase tracking-[0.2em] px-2 py-1 text-[#dcebe2]" style={{ background: 'var(--baize)' }}>
+            Executed
           </span>
-        )}
+        ) : highlight ? (
+          <span className="text-[9px] font-label-mono uppercase tracking-[0.2em] px-2 py-1 border border-[#8a6d34] text-[#8a6d34]">
+            Best Terms
+          </span>
+        ) : null}
       </div>
 
-      <div className="space-y-4 mb-8 font-label-mono">
-        <div className="flex flex-col">
-          <span className="text-on-surface-variant text-xs uppercase">Investment Capital:</span>
-          <span className={`text-2xl font-bold ${highlight ? 'text-secondary' : 'text-on-surface'}`}>{offer.amount}</span>
+      {/* The figure — engraved, the hero of the document */}
+      <div className="mb-1">
+        <p className="text-[9px] font-label-mono uppercase tracking-[0.25em] text-[#a09883]">Investment Capital</p>
+        <p className="fig text-4xl text-[#1c1a15] mt-1">{offer.amount}</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3 mt-5 mb-6">
+        <div>
+          <p className="text-[9px] font-label-mono uppercase tracking-[0.2em] text-[#a09883]">Equity</p>
+          <p className="fig text-lg text-[#1c1a15] mt-0.5">{offer.equity}</p>
         </div>
-        <div className="flex flex-col">
-          <span className="text-on-surface-variant text-xs uppercase">Post-Money Valuation:</span>
-          <span className="text-on-surface text-base">{offer.valuation || 'Undisclosed'}</span>
+        <div>
+          <p className="text-[9px] font-label-mono uppercase tracking-[0.2em] text-[#a09883]">Post-Money</p>
+          <p className="fig text-lg text-[#1c1a15] mt-0.5">{offer.valuation || '—'}</p>
         </div>
-        <div className="flex flex-col">
-          <span className="text-on-surface-variant text-xs uppercase">Equity Percentage:</span>
-          <span className="text-on-surface text-base">{offer.equity}</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-on-surface-variant text-xs uppercase">Terms & Governance:</span>
-          <span className="text-on-surface text-xs font-body-md mt-0.5">{offer.terms}</span>
+        <div className="col-span-2">
+          <p className="text-[9px] font-label-mono uppercase tracking-[0.2em] text-[#a09883]">Terms &amp; Governance</p>
+          <p className="text-xs text-[#4a463d] leading-relaxed mt-1">{offer.terms}</p>
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="mt-auto space-y-2 pt-4 border-t border-[#d8d0bf]">
         <button
           onClick={onAccept}
           disabled={isAccepted || isAccepting}
-          className={`w-full py-3.5 rounded-xl font-label-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer disabled:opacity-60 ${
-            highlight
-              ? 'bg-secondary hover:bg-secondary/90 text-on-secondary shadow-lg shadow-secondary/20'
-              : 'bg-surface-bright hover:bg-surface-variant text-on-surface border border-outline-variant'
-          }`}
+          className="w-full py-3 font-label-mono text-[11px] uppercase tracking-[0.2em] transition-colors cursor-pointer disabled:opacity-70"
+          style={
+            isAccepted
+              ? { background: 'var(--baize)', color: '#dcebe2' }
+              : { background: '#1c1a15', color: 'var(--bone)' }
+          }
         >
-          {isAccepted ? '✓ Term Sheet Accepted' : isAccepting ? 'Accepting…' : 'Accept Term Sheet'}
+          {isAccepted ? 'Term Sheet Executed' : isAccepting ? 'Executing…' : 'Accept Term Sheet'}
         </button>
 
         <button
           onClick={onEnterRoom}
-          className="w-full py-3 rounded-xl bg-surface-variant hover:bg-surface-bright border border-outline-variant text-on-surface font-label-mono text-xs uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2"
+          className="w-full py-2.5 text-[#6b665b] hover:text-[#1c1a15] font-label-mono text-[10px] uppercase tracking-[0.2em] transition-colors cursor-pointer flex items-center justify-center gap-1.5"
         >
-          Enter Room <ArrowRight className="w-3.5 h-3.5" />
+          Enter Negotiation <ArrowRight className="w-3 h-3" />
         </button>
       </div>
     </motion.div>

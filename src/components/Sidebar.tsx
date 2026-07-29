@@ -22,14 +22,14 @@ interface SidebarProps {
 export function Sidebar({ currentView, onNavigate, onOpenNewBid, onOpenSupport, onOpenSignOut }: SidebarProps) {
   return (
     <nav className="hidden md:flex flex-col h-full py-6 px-4 bg-surface-container-low border-r border-outline-variant z-40 w-64 shrink-0">
-      <div className="mb-8 px-4 cursor-pointer" onClick={() => onNavigate('dashboard')}>
-        <h1 className="font-headline-md text-xl font-bold text-on-surface">Sharktank Simulator</h1>
-        <p className="font-label-mono text-xs text-on-surface-variant uppercase tracking-wider mt-1">Institutional Grade</p>
+      <div className="mb-8 px-3 cursor-pointer" onClick={() => onNavigate('dashboard')}>
+        <h1 className="font-display text-lg font-semibold text-on-surface tracking-tight">Sharktank</h1>
+        <p className="font-label-mono text-[9px] text-primary/70 uppercase tracking-[0.3em] mt-1">Private Capital</p>
       </div>
-      
-      <button 
+
+      <button
         onClick={onOpenNewBid}
-        className="mb-8 w-full py-3 px-4 rounded-lg bg-gradient-to-b from-primary to-blue-700 text-white font-label-mono text-xs uppercase tracking-wider border border-blue-600 shadow-sm hover:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+        className="mb-8 w-full py-3 px-4 bg-primary text-on-primary font-label-mono text-[11px] uppercase tracking-[0.15em] hover:bg-primary-fixed transition-colors flex items-center justify-center gap-2 cursor-pointer"
       >
         <Plus className="w-4 h-4" />
         New Bid
@@ -91,9 +91,11 @@ export function Sidebar({ currentView, onNavigate, onOpenNewBid, onOpenSupport, 
 function NavItem({ icon, label, isActive, onClick, highlight }: { icon: ReactNode, label: string, isActive: boolean, onClick: () => void, highlight?: boolean }) {
   if (highlight && isActive) {
     return (
-      <button onClick={onClick} className="w-full flex items-center gap-3 px-4 py-3 bg-secondary-container/20 text-secondary border border-secondary/30 rounded-lg transition-all duration-200">
+      <button onClick={onClick} className="w-full flex items-center gap-3 px-4 py-2.5 text-secondary-fixed transition-colors relative">
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-px bg-secondary-fixed" />
         {icon}
-        <span className="font-label-mono text-xs uppercase tracking-wider font-bold">{label}</span>
+        <span className="font-label-mono text-[11px] uppercase tracking-[0.15em]">{label}</span>
+        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
       </button>
     );
   }
@@ -101,14 +103,15 @@ function NavItem({ icon, label, isActive, onClick, highlight }: { icon: ReactNod
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-        isActive 
-          ? 'bg-surface-variant text-on-surface' 
-          : 'text-on-surface-variant hover:bg-surface-variant/50 hover:text-on-surface'
+      className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors relative ${
+        isActive
+          ? 'text-on-surface'
+          : 'text-on-surface-variant hover:text-on-surface'
       }`}
     >
+      {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-px bg-primary" />}
       {icon}
-      <span className={`font-label-mono text-xs uppercase tracking-wider ${isActive ? 'font-bold' : ''}`}>
+      <span className="font-label-mono text-[11px] uppercase tracking-[0.15em]">
         {label}
       </span>
     </button>

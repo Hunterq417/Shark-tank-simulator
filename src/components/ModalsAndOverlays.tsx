@@ -145,7 +145,7 @@ export function ViewDeckModal({ isOpen, onClose, companyName = 'Nexus AI' }: { i
           <div className="my-auto space-y-4 max-w-xl">
             {slide === 1 && (
               <>
-                <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-emerald-400 to-blue-600 flex items-center justify-center text-white text-3xl font-bold">N</div>
+                <div className="w-16 h-16 mx-auto rounded-sm bg-surface-variant border border-primary/30 flex items-center justify-center text-primary font-display text-3xl font-semibold">N</div>
                 <h2 className="font-display text-4xl font-bold text-on-surface">{companyName}</h2>
                 <p className="text-on-surface-variant text-lg">Autonomous ML Infrastructure for Enterprise Workflow Intelligence</p>
               </>

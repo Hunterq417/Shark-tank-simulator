@@ -112,7 +112,7 @@ export function LivePitch({ onNavigate, onOpenNewBid, onOpenViewDeck }: LivePitc
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden relative z-10 p-6 gap-6">
         {/* Background Grid */}
-        <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-20 pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(#1c2128_1px,transparent_1px)] [background-size:28px_28px] opacity-30 pointer-events-none" />
         
         {/* Left Side: Video & Board */}
         <div className="flex-1 flex flex-col gap-6 min-w-0">
@@ -122,7 +122,7 @@ export function LivePitch({ onNavigate, onOpenNewBid, onOpenViewDeck }: LivePitc
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50" />
             <div className="flex justify-between items-center mb-6 relative z-10">
                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg">
+                  <div className="w-12 h-12 rounded-sm bg-surface-variant border border-primary/30 flex items-center justify-center text-primary font-display font-semibold text-2xl">
                     N
                   </div>
                   <h1 className="font-headline-lg text-3xl text-on-surface font-bold">{displayName}</h1>
@@ -326,7 +326,7 @@ function OfferChip({ name, amount, equity, time, highlight, onClick }: { name: s
 
 function InvestorCard({ name, status, value, highlight, statusColor = "text-on-surface-variant", avatar, avatarImg, onClick }: { name: string, status: string, value?: string, highlight?: boolean, statusColor?: string, avatar?: string, avatarImg?: string, onClick?: () => void }) {
   return (
-    <div onClick={onClick} className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${highlight ? 'bg-secondary/10 border-secondary/30 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'bg-surface-container/50 border-outline-variant hover:bg-surface-container'}`}>
+    <div onClick={onClick} className={`flex items-center justify-between p-3 border transition-colors cursor-pointer ${highlight ? 'bg-secondary-container/20 border-secondary/40' : 'bg-surface-container/50 border-outline-variant hover:bg-surface-container'}`}>
        <div className="flex items-center gap-3">
          <div className="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center overflow-hidden border border-outline-variant shrink-0">
            {avatarImg ? <img src={avatarImg} alt={name} className="w-full h-full object-cover" /> : <span className="font-display font-bold text-on-surface">{avatar}</span>}

@@ -40,18 +40,18 @@ const dealFlowData = [
 ];
 
 const sectorData = [
-  { sector: 'AI & Data', volume: 24.5, count: 18, color: '#2563eb' },
-  { sector: 'FinTech', volume: 14.2, count: 12, color: '#10b981' },
-  { sector: 'CleanTech', volume: 9.8, count: 8, color: '#ffb95f' },
-  { sector: 'HealthTech', volume: 7.4, count: 6, color: '#a855f7' },
-  { sector: 'B2B SaaS', volume: 12.1, count: 11, color: '#ec4899' },
+  { sector: 'AI & Data', volume: 24.5, count: 18, color: '#c6a15b' },
+  { sector: 'FinTech', volume: 14.2, count: 12, color: '#6e9e85' },
+  { sector: 'CleanTech', volume: 9.8, count: 8, color: '#d8c39a' },
+  { sector: 'HealthTech', volume: 7.4, count: 6, color: '#b4524a' },
+  { sector: 'B2B SaaS', volume: 12.1, count: 11, color: '#8a8f98' },
 ];
 
 const stageData = [
-  { name: 'Seed', value: 40, color: '#10b981' },
-  { name: 'Series A', value: 35, color: '#2563eb' },
-  { name: 'Series B', value: 15, color: '#ffb95f' },
-  { name: 'Pre-Seed', value: 10, color: '#a855f7' },
+  { name: 'Seed', value: 40, color: '#c6a15b' },
+  { name: 'Series A', value: 35, color: '#6e9e85' },
+  { name: 'Series B', value: 15, color: '#d8c39a' },
+  { name: 'Pre-Seed', value: 10, color: '#8a8f98' },
 ];
 
 const recentDeals = [
@@ -278,22 +278,22 @@ export function Analytics({ onNavigate }: AnalyticsProps) {
                 <AreaChart data={dealFlowData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#c6a15b" stopOpacity={0.35}/>
+                      <stop offset="95%" stopColor="#c6a15b" stopOpacity={0}/>
                     </linearGradient>
                     <linearGradient id="colorValuation" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#6e9e85" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#6e9e85" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} />
-                  <XAxis dataKey="month" stroke="#94a3b8" fontSize={12} tickLine={false} />
-                  <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '12px', color: '#e1e2ed' }}
+                  <CartesianGrid strokeDasharray="2 4" stroke="#2a2f37" opacity={0.6} />
+                  <XAxis dataKey="month" stroke="#8a8f98" fontSize={11} tickLine={false} />
+                  <YAxis stroke="#8a8f98" fontSize={11} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#171b21', borderColor: '#2a2f37', borderRadius: '2px', color: '#ede8de' }}
                   />
-                  <Area type="monotone" dataKey="volume" stroke="#2563eb" strokeWidth={2} fillOpacity={1} fill="url(#colorVolume)" />
-                  <Area type="monotone" dataKey="avgValuation" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorValuation)" />
+                  <Area type="monotone" dataKey="volume" stroke="#c6a15b" strokeWidth={1.5} fillOpacity={1} fill="url(#colorVolume)" />
+                  <Area type="monotone" dataKey="avgValuation" stroke="#6e9e85" strokeWidth={1.5} fillOpacity={1} fill="url(#colorValuation)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -322,7 +322,7 @@ export function Analytics({ onNavigate }: AnalyticsProps) {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '12px', color: '#e1e2ed' }} />
+                  <Tooltip contentStyle={{ backgroundColor: '#171b21', borderColor: '#2a2f37', borderRadius: '2px', color: '#ede8de' }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -351,11 +351,11 @@ export function Analytics({ onNavigate }: AnalyticsProps) {
           <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={sectorData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} />
-                <XAxis dataKey="sector" stroke="#94a3b8" fontSize={12} tickLine={false} />
-                <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} />
-                <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '12px', color: '#e1e2ed' }} />
-                <Bar dataKey="volume" radius={[6, 6, 0, 0]}>
+                <CartesianGrid strokeDasharray="2 4" stroke="#2a2f37" opacity={0.6} />
+                <XAxis dataKey="sector" stroke="#8a8f98" fontSize={11} tickLine={false} />
+                <YAxis stroke="#8a8f98" fontSize={11} tickLine={false} />
+                <Tooltip contentStyle={{ backgroundColor: '#171b21', borderColor: '#2a2f37', borderRadius: '2px', color: '#ede8de' }} />
+                <Bar dataKey="volume" radius={[2, 2, 0, 0]}>
                   {sectorData.map((entry, index) => (
                     <Cell key={`bar-${index}`} fill={entry.color} />
                   ))}

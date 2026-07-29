@@ -196,7 +196,7 @@ export function Negotiation({ onNavigate, onOpenCounterOffer }: NegotiationProps
            <div className="w-full lg:w-80 flex flex-col shrink-0">
              <h2 className="font-headline-md text-lg text-on-surface font-bold mb-4">Original Pitch Ask</h2>
              <div className="bg-surface-container/40 border border-primary/20 rounded-xl overflow-hidden glass-panel relative">
-               <div className="h-2 w-full bg-gradient-to-r from-primary to-blue-500" />
+               <div className="h-1 w-full bg-primary" />
                <div className="p-6">
                   <div className="flex items-center gap-4 mb-6 pb-6 border-b border-outline-variant">
                      <div className="w-12 h-12 rounded-lg bg-surface-variant border border-outline-variant flex items-center justify-center p-2 font-display font-bold text-primary text-2xl">

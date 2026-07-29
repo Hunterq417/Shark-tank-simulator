@@ -77,67 +77,65 @@ export function Dashboard({
     <div className="flex-1 overflow-y-auto relative bg-background">
       {/* Background Graphic */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-full max-w-5xl h-96 bg-primary/20 blur-[140px] rounded-full opacity-40" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-full max-w-3xl h-96 bg-primary/[0.06] blur-[160px] rounded-full" />
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-8 py-12 flex flex-col items-center">
         
         {/* Hero Section */}
         <div className="text-center max-w-3xl mb-12">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="inline-flex items-center gap-2 bg-secondary/10 border border-secondary/20 text-secondary text-xs font-label-mono uppercase px-3 py-1 rounded-full mb-6"
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="inline-flex items-center gap-3 text-secondary text-[10px] font-label-mono uppercase tracking-[0.3em] mb-8"
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Institutional Bidding Engine v2.4</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
+            <span>Session Live</span>
           </motion.div>
 
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="font-display text-5xl md:text-6xl font-bold text-on-surface mb-6 leading-tight"
+            className="font-display text-5xl md:text-6xl font-semibold text-on-surface mb-6 leading-[1.05] tracking-tight"
           >
-            The Future of <br/>
-            <span className="bg-gradient-to-r from-primary via-blue-400 to-secondary bg-clip-text text-transparent">
-              Venture Capital is Live
-            </span>
+            Where capital meets <br/>
+            <span className="text-primary italic font-normal">conviction.</span>
           </motion.h1>
-          
-          <motion.p 
+
+          <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-on-surface-variant text-base md:text-lg max-w-2xl mx-auto mb-8 leading-relaxed"
+            className="text-on-surface-variant text-base max-w-xl mx-auto mb-9 leading-relaxed"
           >
-            Execute syndicates, analyze pitch decks with AI, and enter real-time negotiation rooms with top founders and LPs in milliseconds.
+            Review the founders on the table, weigh the term sheets, and close in the room — one deal at a time.
           </motion.p>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="flex flex-wrap items-center justify-center gap-4"
+            className="flex flex-wrap items-center justify-center gap-3"
           >
-            <button 
+            <button
               onClick={() => onNavigate('offers')}
-              className="px-6 py-3.5 rounded-xl bg-secondary text-on-secondary font-label-mono font-bold uppercase tracking-wider text-xs hover:bg-secondary/90 transition-all shadow-lg shadow-secondary/20 cursor-pointer flex items-center gap-2"
+              className="px-6 py-3 bg-primary text-on-primary font-label-mono uppercase tracking-[0.15em] text-[11px] hover:bg-primary-fixed transition-colors cursor-pointer flex items-center gap-2"
             >
               <Briefcase className="w-4 h-4" />
-              Founder Workspace
+              Review Term Sheets
             </button>
 
-            <button 
+            <button
               onClick={() => onNavigate('live-pitch')}
-              className="px-6 py-3.5 rounded-xl bg-primary text-on-primary font-label-mono font-bold uppercase tracking-wider text-xs hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 cursor-pointer flex items-center gap-2"
+              className="px-6 py-3 border border-outline text-on-surface font-label-mono uppercase tracking-[0.15em] text-[11px] hover:border-primary hover:text-primary transition-colors cursor-pointer flex items-center gap-2"
             >
-              <Radio className="w-4 h-4 animate-pulse" />
+              <Radio className="w-4 h-4" />
               Live Stage
             </button>
 
-            <button 
+            <button
               onClick={onOpenNewBid}
-              className="px-6 py-3.5 rounded-xl border border-outline-variant bg-surface-container hover:bg-surface-bright text-on-surface font-label-mono text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2"
+              className="px-6 py-3 text-on-surface-variant hover:text-on-surface font-label-mono uppercase tracking-[0.15em] text-[11px] transition-colors cursor-pointer flex items-center gap-2"
             >
               <Zap className="w-4 h-4 text-tertiary" />
               Submit Bid

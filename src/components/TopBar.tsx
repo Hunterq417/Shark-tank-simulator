@@ -49,7 +49,7 @@ export function TopBar({
     <header className="flex justify-between items-center px-8 h-16 border-b border-outline-variant bg-surface-container-low/90 backdrop-blur-md shrink-0 z-30 relative">
       {/* Title / Breadcrumb */}
       <div className="flex items-center gap-3">
-        <h2 className="font-headline-md text-lg text-on-surface font-bold">
+        <h2 className="font-display text-xl text-on-surface font-semibold tracking-tight">
           {title || 'Sharktank Simulator'}
         </h2>
       </div>
@@ -59,7 +59,7 @@ export function TopBar({
         
         {/* Search Bar */}
         <div className="relative">
-          <div className="bg-surface border border-outline-variant/60 flex items-center px-3 py-1.5 rounded-lg focus-within:border-primary transition-colors">
+          <div className="bg-surface border-b border-outline-variant flex items-center px-3 py-1.5 focus-within:border-primary transition-colors">
             <Search className="w-4 h-4 text-on-surface-variant mr-2" />
             <input 
               type="text" 

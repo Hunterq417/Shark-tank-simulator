@@ -4,7 +4,7 @@ let socket: Socket | null = null;
 
 export function getSocket(): Socket {
   if (!socket) {
-    const socketOrigin = import.meta.env.VITE_API_BASE_URL || window.location.origin;
+    const socketOrigin = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/+$/, '') || window.location.origin;
     socket = io(socketOrigin, {
       transports: ['websocket', 'polling'],
       autoConnect: true,

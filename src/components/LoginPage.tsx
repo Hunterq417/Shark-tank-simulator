@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Lock, User, Eye, EyeOff, ArrowRight, AlertCircle, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, AlertCircle, RefreshCw } from 'lucide-react';
 import { authApi } from '../lib/api';
 import { UserProfile } from '../types';
 
@@ -52,71 +52,68 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 pointer-events-none" />
-      <div className="absolute top-1/4 -left-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-secondary/10 rounded-full blur-3xl pointer-events-none" />
+      {/* Faint engraved monogram, watermark-quiet */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+        <span className="font-display text-[42rem] leading-none text-on-surface/[0.015] -mt-24">S</span>
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className="w-full max-w-md relative"
       >
-        <div className="text-center mb-8">
-          <h1 className="font-headline-md text-3xl font-bold text-on-surface">Sharktank Simulator</h1>
-          <p className="font-label-mono text-xs text-on-surface-variant uppercase tracking-wider mt-1">
-            Institutional Grade
-          </p>
+        <div className="text-center mb-10">
+          <h1 className="font-display text-4xl font-semibold text-on-surface tracking-tight">Sharktank Simulator</h1>
+          <div className="flex items-center justify-center gap-3 mt-3">
+            <span className="h-px w-8 bg-primary/40" />
+            <p className="font-label-mono text-[10px] text-primary/80 uppercase tracking-[0.35em]">
+              Private Capital
+            </p>
+            <span className="h-px w-8 bg-primary/40" />
+          </div>
         </div>
 
-        <div className="bg-surface-container border border-outline-variant rounded-2xl shadow-2xl p-8 glass-panel">
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-primary mb-3 border border-primary/20">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-            <h2 className="text-xl font-bold font-headline-md text-on-surface">Sign In</h2>
-            <p className="text-xs text-on-surface-variant mt-1 font-body-md">
-              Enter your credentials to access the platform
-            </p>
+        {/* Sign-in rendered as a bone-stock document with a brass edge */}
+        <div className="paper brass-edge pl-8 pr-8 py-9">
+          <div className="mb-7">
+            <h2 className="text-lg font-display font-semibold text-[#1c1a15]">Sign in</h2>
+            <p className="text-xs text-[#6b665b] mt-1">Enter your credentials to access the console.</p>
           </div>
 
           {errorMessage && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-4 p-3 rounded-xl bg-error/10 border border-error/30 text-error text-xs flex items-center gap-2"
+              className="mb-5 py-2.5 px-3 border-l-2 border-error bg-error/5 text-error text-xs flex items-center gap-2"
             >
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errorMessage}</span>
             </motion.div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="userId" className="block text-xs font-label-mono text-on-surface-variant mb-1">
+              <label htmlFor="userId" className="block text-[10px] font-label-mono text-[#8a8477] uppercase tracking-[0.2em] mb-2">
                 User ID
               </label>
-              <div className="relative">
-                <User className="w-4 h-4 text-on-surface-variant absolute left-3 top-3" />
-                <input
-                  id="userId"
-                  type="text"
-                  required
-                  autoComplete="username"
-                  value={userId}
-                  onChange={(e) => setUserId(e.target.value)}
-                  placeholder="your@email.com"
-                  className="w-full pl-9 pr-3 py-2.5 bg-surface border border-outline-variant rounded-xl text-sm text-on-surface focus:border-primary outline-none transition-colors"
-                />
-              </div>
+              <input
+                id="userId"
+                type="text"
+                required
+                autoComplete="username"
+                value={userId}
+                onChange={(e) => setUserId(e.target.value)}
+                placeholder="your@email.com"
+                className="w-full pb-2 bg-transparent border-b border-[#c9c2b2] text-sm text-[#1c1a15] placeholder:text-[#b3ab99] focus:border-[#8a6d34] outline-none transition-colors"
+              />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-xs font-label-mono text-on-surface-variant mb-1">
+              <label htmlFor="password" className="block text-[10px] font-label-mono text-[#8a8477] uppercase tracking-[0.2em] mb-2">
                 Password
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-on-surface-variant absolute left-3 top-3" />
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -125,12 +122,12 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-9 py-2.5 bg-surface border border-outline-variant rounded-xl text-sm text-on-surface focus:border-primary outline-none transition-colors"
+                  className="w-full pb-2 pr-8 bg-transparent border-b border-[#c9c2b2] text-sm text-[#1c1a15] placeholder:text-[#b3ab99] focus:border-[#8a6d34] outline-none transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-on-surface-variant hover:text-on-surface cursor-pointer"
+                  className="absolute right-0 top-0 text-[#8a8477] hover:text-[#1c1a15] cursor-pointer"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -141,7 +138,8 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-primary to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-label-mono text-xs uppercase tracking-wider font-bold shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
+              className="w-full py-3 mt-2 bg-[#14181c] hover:bg-[#22282f] text-bone text-[11px] uppercase tracking-[0.2em] font-label-mono transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              style={{ color: 'var(--bone)' }}
             >
               {isLoading ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
@@ -155,8 +153,8 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
           </form>
         </div>
 
-        <p className="text-center text-[10px] text-on-surface-variant mt-6 font-label-mono">
-          Venture Capital Console &middot; Secure Access
+        <p className="text-center text-[10px] text-on-surface-variant mt-6 font-label-mono uppercase tracking-[0.2em]">
+          Venture Capital Console
         </p>
       </motion.div>
     </div>
