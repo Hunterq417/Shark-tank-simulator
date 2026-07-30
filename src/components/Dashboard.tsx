@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { ViewState, UserProfile, NotificationItem } from '../types';
-import { Radio, Briefcase, BarChart3, TrendingUp, Sparkles, ArrowRight, PlayCircle, Shield, Zap } from 'lucide-react';
+import { Radio, Briefcase, ArrowRight, Zap } from 'lucide-react';
 import { eventsApi, offersApi, dealsApi } from '../lib/api';
 
 interface DashboardProps {

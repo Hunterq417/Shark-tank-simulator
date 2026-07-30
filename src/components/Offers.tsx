@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { ViewState } from '../types';
-import { CheckCircle2, ArrowRight } from 'lucide-react';
+import { CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
 import { offersApi } from '../lib/api';
 import { getSocket } from '../lib/socket';
 
@@ -25,6 +25,7 @@ export function Offers({ onNavigate, onOpenNewBid }: OffersProps) {
   const [offers, setOffers] = useState<OfferRecord[]>([]);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastIsError, setToastIsError] = useState(false);
 
   const loadOffers = () => {
     offersApi.getAll()
@@ -48,14 +49,21 @@ export function Offers({ onNavigate, onOpenNewBid }: OffersProps) {
     };
   }, []);
 
+  const showToast = (msg: string, isError = false) => {
+    setToastMessage(msg);
+    setToastIsError(isError);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
   const handleAccept = async (offer: OfferRecord) => {
     setAcceptingId(offer.id);
     try {
       await offersApi.accept(offer.id);
-      setToastMessage(`Term Sheet Accepted with ${offer.sharkName}! Escrow sequence initiated.`);
-      setTimeout(() => setToastMessage(null), 4000);
+      showToast(`Term Sheet Accepted with ${offer.sharkName}! Escrow sequence initiated.`);
       loadOffers();
-    } catch {
+    } catch (err: any) {
+      showToast(err?.message || 'Could not accept this term sheet. Please try again.', true);
+    } finally {
       setAcceptingId(null);
     }
   };
@@ -70,9 +78,18 @@ export function Offers({ onNavigate, onOpenNewBid }: OffersProps) {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0 }}
-          className="fixed top-20 right-8 z-50 bg-secondary-container text-on-secondary-container px-4 py-3 rounded-xl border border-secondary/30 shadow-2xl flex items-center gap-2 font-label-mono text-sm"
+          role="status"
+          className={`fixed top-20 right-8 z-50 px-4 py-3 border shadow-2xl flex items-center gap-2 font-label-mono text-sm ${
+            toastIsError
+              ? 'bg-error-container text-on-error-container border-error/40'
+              : 'bg-secondary-container text-on-secondary-container border-secondary/30'
+          }`}
         >
-          <CheckCircle2 className="w-5 h-5 text-secondary" />
+          {toastIsError ? (
+            <AlertCircle className="w-5 h-5 shrink-0" />
+          ) : (
+            <CheckCircle2 className="w-5 h-5 text-secondary shrink-0" />
+          )}
           {toastMessage}
         </motion.div>
       )}
@@ -129,23 +146,30 @@ function OfferCard({
   onEnterRoom: () => void;
 }) {
   const isAccepted = offer.status === 'ACCEPTED';
+  // Withdrawn/rejected sheets stay on the table for the record, but can't be acted on.
+  const closedLabel =
+    offer.status === 'WITHDRAWN' ? 'Withdrawn' : offer.status === 'REJECTED' ? 'Declined' : null;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className="paper brass-edge pl-7 pr-6 py-7 flex flex-col"
+      className={`paper brass-edge pl-7 pr-6 py-7 flex flex-col ${closedLabel ? 'opacity-60' : ''}`}
     >
       {/* Document header */}
       <div className="flex justify-between items-start pb-4 mb-5 border-b border-[#d8d0bf]">
         <div>
-          <p className="text-[9px] font-label-mono uppercase tracking-[0.25em] text-[#a09883]">Lead Investor</p>
+          <p className="text-[9px] font-label-mono uppercase tracking-[0.25em] text-[#6b6558]">Lead Investor</p>
           <h3 className="font-display text-xl font-semibold text-[#1c1a15] mt-1">{offer.sharkName}</h3>
         </div>
         {isAccepted ? (
           <span className="text-[9px] font-label-mono uppercase tracking-[0.2em] px-2 py-1 text-[#dcebe2]" style={{ background: 'var(--baize)' }}>
             Executed
+          </span>
+        ) : closedLabel ? (
+          <span className="text-[9px] font-label-mono uppercase tracking-[0.2em] px-2 py-1 border border-[#6b6558] text-[#6b6558]">
+            {closedLabel}
           </span>
         ) : highlight ? (
           <span className="text-[9px] font-label-mono uppercase tracking-[0.2em] px-2 py-1 border border-[#8a6d34] text-[#8a6d34]">
@@ -156,21 +180,21 @@ function OfferCard({
 
       {/* The figure — engraved, the hero of the document */}
       <div className="mb-1">
-        <p className="text-[9px] font-label-mono uppercase tracking-[0.25em] text-[#a09883]">Investment Capital</p>
+        <p className="text-[9px] font-label-mono uppercase tracking-[0.25em] text-[#6b6558]">Investment Capital</p>
         <p className="fig text-4xl text-[#1c1a15] mt-1">{offer.amount}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-x-4 gap-y-3 mt-5 mb-6">
         <div>
-          <p className="text-[9px] font-label-mono uppercase tracking-[0.2em] text-[#a09883]">Equity</p>
+          <p className="text-[9px] font-label-mono uppercase tracking-[0.2em] text-[#6b6558]">Equity</p>
           <p className="fig text-lg text-[#1c1a15] mt-0.5">{offer.equity}</p>
         </div>
         <div>
-          <p className="text-[9px] font-label-mono uppercase tracking-[0.2em] text-[#a09883]">Post-Money</p>
+          <p className="text-[9px] font-label-mono uppercase tracking-[0.2em] text-[#6b6558]">Post-Money</p>
           <p className="fig text-lg text-[#1c1a15] mt-0.5">{offer.valuation || '—'}</p>
         </div>
         <div className="col-span-2">
-          <p className="text-[9px] font-label-mono uppercase tracking-[0.2em] text-[#a09883]">Terms &amp; Governance</p>
+          <p className="text-[9px] font-label-mono uppercase tracking-[0.2em] text-[#6b6558]">Terms &amp; Governance</p>
           <p className="text-xs text-[#4a463d] leading-relaxed mt-1">{offer.terms}</p>
         </div>
       </div>
@@ -178,15 +202,23 @@ function OfferCard({
       <div className="mt-auto space-y-2 pt-4 border-t border-[#d8d0bf]">
         <button
           onClick={onAccept}
-          disabled={isAccepted || isAccepting}
-          className="w-full py-3 font-label-mono text-[11px] uppercase tracking-[0.2em] transition-colors cursor-pointer disabled:opacity-70"
+          disabled={isAccepted || isAccepting || !!closedLabel}
+          className="w-full py-3 font-label-mono text-[11px] uppercase tracking-[0.2em] transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
           style={
             isAccepted
               ? { background: 'var(--baize)', color: '#dcebe2' }
-              : { background: '#1c1a15', color: 'var(--bone)' }
+              : closedLabel
+                ? { background: '#c9c2b2', color: '#4a463d' }
+                : { background: '#1c1a15', color: 'var(--bone)' }
           }
         >
-          {isAccepted ? 'Term Sheet Executed' : isAccepting ? 'Executing…' : 'Accept Term Sheet'}
+          {isAccepted
+            ? 'Term Sheet Executed'
+            : closedLabel
+              ? `Offer ${closedLabel}`
+              : isAccepting
+                ? 'Executing…'
+                : 'Accept Term Sheet'}
         </button>
 
         <button

@@ -1,13 +1,18 @@
 // In split deployments (e.g. frontend on Vercel, backend on Render), set
 // VITE_API_BASE_URL to the backend's origin. Left unset, it defaults to the
 // same origin (Docker Compose / local dev proxy).
-const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/+$/, '');
+const API_ORIGIN = (import.meta.env?.VITE_API_BASE_URL || '').trim().replace(/\/+$/, '');
 const API_BASE = `${API_ORIGIN}/api`;
 
 // Free-tier hosts (e.g. Render) spin the backend down after inactivity; the
 // first request after a cold spell can take 10-50s and may bounce off a
 // gateway error while the container boots. Retry transient failures instead
 // of surfacing them as "invalid credentials" or similar to the user.
+//
+// Only safe (idempotent) requests retry by default: a 502/504 means the
+// gateway gave up, NOT that the backend skipped the work, so blindly re-sending
+// a POST can duplicate an offer, a chat message, or a broadcast. Endpoints that
+// are genuinely safe to repeat opt in with `retry: true`.
 const RETRY_DELAYS_MS = [2000, 5000, 10000];
 const RETRYABLE_STATUSES = new Set([502, 503, 504]);
 
@@ -15,7 +20,20 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+/**
+ * Only safe methods retry unless a call explicitly opts in. Exported so the
+ * rule stays checkable — see api.retry-check.ts.
+ */
+export function shouldRetry(method?: string, optIn?: boolean): boolean {
+  const m = (method || 'GET').toUpperCase();
+  return optIn ?? (m === 'GET' || m === 'HEAD');
+}
+
+export async function apiFetch<T>(
+  endpoint: string,
+  { retry, ...options }: RequestInit & { retry?: boolean } = {},
+): Promise<T> {
+  const canRetry = shouldRetry(options.method, retry);
   const token = localStorage.getItem('access_token');
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -26,9 +44,9 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  let lastError: unknown;
-
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    const isLastAttempt = !canRetry || attempt === RETRY_DELAYS_MS.length;
+
     try {
       const res = await fetch(`${API_BASE}${endpoint}`, {
         ...options,
@@ -36,7 +54,7 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
       });
 
       if (!res.ok) {
-        if (RETRYABLE_STATUSES.has(res.status) && attempt < RETRY_DELAYS_MS.length) {
+        if (RETRYABLE_STATUSES.has(res.status) && !isLastAttempt) {
           await sleep(RETRY_DELAYS_MS[attempt]);
           continue;
         }
@@ -49,8 +67,7 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
       // A thrown TypeError here means the fetch itself failed (network error,
       // DNS not ready yet, etc.) rather than the server responding with an
       // error status — also worth retrying while the backend wakes up.
-      if (err instanceof TypeError && attempt < RETRY_DELAYS_MS.length) {
-        lastError = err;
+      if (err instanceof TypeError && !isLastAttempt) {
         await sleep(RETRY_DELAYS_MS[attempt]);
         continue;
       }
@@ -58,7 +75,8 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
     }
   }
 
-  throw lastError instanceof Error ? lastError : new Error('Request failed');
+  // Unreachable: the final attempt always returns or throws above.
+  throw new Error('Request failed');
 }
 
 // Auth API
@@ -66,7 +84,11 @@ export const authApi = {
   login: (userId: string, password: string) =>
     apiFetch<{ user: any; accessToken: string; refreshToken: string }>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ userId, password })
+      body: JSON.stringify({ userId, password }),
+      // Safe to repeat: re-issuing tokens is idempotent, and auto-provisioning
+      // is guarded by the unique email constraint. This is the call that
+      // actually suffers from backend cold starts.
+      retry: true
     }),
   register: (data: { email: string; password: string; name: string; role?: string; company?: string }) =>
     apiFetch<{ user: any; accessToken: string; refreshToken: string }>('/auth/register', {

@@ -16,7 +16,7 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit && eslint \"src/server/**/*.ts\"",
     "lint:fix": "eslint \"src/server/**/*.ts\" --fix",
-    "test": "jest --config src/server/jest.config.json",
+    "test": "jest --config src/server/jest.config.json && tsx src/lib/api.retry-check.ts",
     "test:watch": "jest --config src/server/jest.config.json --watch",
     "test:cov": "jest --config src/server/jest.config.json --coverage",
     "test:e2e": "jest --config test/jest-e2e.json",

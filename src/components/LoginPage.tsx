@@ -94,7 +94,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="userId" className="block text-[10px] font-label-mono text-[#8a8477] uppercase tracking-[0.2em] mb-2">
+              <label htmlFor="userId" className="block text-[10px] font-label-mono text-[#6b6558] uppercase tracking-[0.2em] mb-2">
                 User ID
               </label>
               <input
@@ -105,12 +105,12 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
                 placeholder="your@email.com"
-                className="w-full pb-2 bg-transparent border-b border-[#c9c2b2] text-sm text-[#1c1a15] placeholder:text-[#b3ab99] focus:border-[#8a6d34] outline-none transition-colors"
+                className="w-full pb-2 bg-transparent border-b border-[#c9c2b2] text-sm text-[#1c1a15] placeholder:text-[#6b6558] focus:border-[#8a6d34] outline-none transition-colors"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-[10px] font-label-mono text-[#8a8477] uppercase tracking-[0.2em] mb-2">
+              <label htmlFor="password" className="block text-[10px] font-label-mono text-[#6b6558] uppercase tracking-[0.2em] mb-2">
                 Password
               </label>
               <div className="relative">
@@ -122,12 +122,12 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pb-2 pr-8 bg-transparent border-b border-[#c9c2b2] text-sm text-[#1c1a15] placeholder:text-[#b3ab99] focus:border-[#8a6d34] outline-none transition-colors"
+                  className="w-full pb-2 pr-8 bg-transparent border-b border-[#c9c2b2] text-sm text-[#1c1a15] placeholder:text-[#6b6558] focus:border-[#8a6d34] outline-none transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-0 top-0 text-[#8a8477] hover:text-[#1c1a15] cursor-pointer"
+                  className="absolute right-0 top-0 text-[#6b6558] hover:text-[#1c1a15] cursor-pointer"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -138,7 +138,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 mt-2 bg-[#14181c] hover:bg-[#22282f] text-bone text-[11px] uppercase tracking-[0.2em] font-label-mono transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className="w-full py-3 mt-2 bg-[#14181c] hover:bg-[#22282f] text-[11px] uppercase tracking-[0.2em] font-label-mono transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               style={{ color: 'var(--bone)' }}
             >
               {isLoading ? (
